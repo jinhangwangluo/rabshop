@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统安装向导</title>
+  <link rel="stylesheet" href="/install/vendor/element-ui/index.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100%;
+      color: #1f2937;
+      background: #dcecff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    [v-cloak] {
+      display: none;
+    }
+
+    .install-page {
+      min-height: 100vh;
+      padding: 30px;
+      background:
+        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, .72), rgba(255, 255, 255, 0) 26%),
+        linear-gradient(135deg, #d7e9ff 0%, #eff7ff 48%, #d9ebff 100%);
+    }
+
+    .installer {
+      width: min(1196px, 100%);
+      min-height: 920px;
+      margin: 0 auto;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 22px 58px rgba(52, 92, 148, .16);
+    }
+
+    .installer.is-env-installer {
+      height: calc(100vh - 60px);
+      min-height: 0;
+    }
+
+    .installer-header {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+      background: #eef6ff url("/install/images/hero-top-clean-v3.png") center / cover no-repeat;
+    }
+
+    .installer-header::before {
+      content: "";
+      position: absolute;
+      left: -1px;
+      top: 0;
+      bottom: 0;
+      z-index: 0;
+      width: 28px;
+      pointer-events: none;
+      background: linear-gradient(90deg, #eef6ff 0%, rgba(238, 246, 255, .94) 58%, rgba(238, 246, 255, 0) 100%);
+    }
+
+    .brand {
+      position: absolute;
+      left: 48px;
+      top: 74px;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 70px;
+      height: 70px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 34px;
+      background: linear-gradient(135deg, #0b7cff 0%, #0757e8 100%);
+      box-shadow: 0 12px 28px rgba(0, 102, 255, .24);
+    }
+
+    .brand-title {
+      margin: 0;
+      color: #0a0f1c;
+      font-size: 30px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+
+    .brand-subtitle {
+      margin: 10px 0 0;
+      color: #5f6572;
+      font-size: 17px;
+      line-height: 1.4;
+    }
+
+    .installer-body {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      min-height: 700px;
+    }
+
+    .installer.is-env-installer .installer-body {
+      height: calc(100% - 220px);
+      min-height: 0;
+    }
+
+    .installer.is-env-installer .sidebar,
+    .installer.is-env-installer .content {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      position: relative;
+      padding: 38px 28px 36px;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6fbff 100%);
+      border-right: 1px solid #edf3fb;
+    }
+
+    .step-list {
+      position: relative;
+      z-index: 2;
+    }
+
+    .step-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 14px;
+      min-height: 112px;
+      padding: 18px 16px;
+      border-radius: 8px;
+      color: #111827;
+    }
+
+    .step-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: 36px;
+      top: 62px;
+      width: 2px;
+      height: 74px;
+      border-left: 2px dashed #d5dde8;
+    }
+
+    .step-item.is-active {
+
+    }
+
+    .step-item.is-active::after {
+      border-color: #9fc2ff;
+    }
+
+    .step-item.is-done::after {
+      border-color: #d5dde8;
+    }
+
+    .step-badge {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      color: #4b5563;
+      font-size: 17px;
+      font-weight: 700;
+      background: #e5e9ee;
+    }
+
+    .step-item.is-active .step-badge {
+      color: #fff;
+      background: linear-gradient(135deg, #2f86ff 0%, #075cf1 100%);
+      box-shadow: 0 10px 20px rgba(0, 100, 255, .22);
+    }
+
+    .step-item.is-done .step-badge {
+      color: #303844;
+      background: #e8ecef;
+    }
+
+    .step-title {
+      margin-top: 1px;
+      color: #111827;
+      font-size: 17px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .step-desc {
+      margin-top: 8px;
+      color: #5f6572;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .step-item.is-active .step-title,
+    .step-item.is-active .step-desc {
+      color: #0b65f0;
+    }
+
+    .sidebar-art {
+      width: 210px;
+      height: 170px;
+      margin: 32px auto 20px;
+      background: url("/install/images/sidebar-box.png") center / contain no-repeat;
+      opacity: .98;
+    }
+
+    .notice-card {
+      margin: 0 4px;
+      padding: 18px 20px;
+      border-radius: 8px;
+      color: #4b3518;
+      background: linear-gradient(135deg, #fff6e7 0%, #fffaf2 100%);
+      box-shadow: 0 10px 24px rgba(164, 112, 44, .08);
+    }
+
+    .notice-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      color: #522f0d;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .notice-title i {
+      color: #df8f22;
+      font-size: 21px;
+    }
+
+    .notice-text {
+      color: #5e5f66;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .content {
+      position: relative;
+      padding: 38px 30px 42px;
+      background: #fff;
+    }
+
+    .content-inner {
+      width: 100%;
+      max-width: 810px;
+      min-height: 628px;
+      margin: 0 auto;
+    }
+
+    .content-inner.is-env-screen {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      max-height: none;
+      overflow: hidden;
+    }
+
+    .page-title {
+      margin: 0;
+      color: #0c1322;
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+
+    .page-note {
+      margin: 14px 0 28px;
+      color: #5f6572;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .data-table {
+      overflow: hidden;
+      border: 1px solid #e4eaf2;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .content-inner.is-env-screen .data-table {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .content-inner.is-env-screen .data-head {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+
+    .content-inner.is-env-screen .tip-bar {
+      flex: 0 0 auto;
+    }
+
+    .content-inner.is-env-screen .action-bar {
+      flex: 0 0 auto;
+    }
+
+    .data-head,
+    .data-row {
+      display: grid;
+      grid-template-columns: 1.15fr 1.55fr 1.15fr 110px;
+      align-items: center;
+      min-height: 58px;
+    }
+
+    .data-head {
+      min-height: 52px;
+      color: #667085;
+      font-size: 14px;
+      background: #fbfcfe;
+    }
+
+    .data-row {
+      color: #1f2937;
+      font-size: 15px;
+      border-top: 1px solid #edf1f6;
+    }
+
+    .data-row.is-problem-focus {
+      background: #fff7ed;
+      box-shadow: inset 3px 0 0 #f97316;
+      transition: background .2s ease, box-shadow .2s ease;
+    }
+
+    .data-cell {
+      min-width: 0;
+      padding: 0 20px;
+      word-break: break-word;
+    }
+
+    .item-name {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+    }
+
+    .item-name i {
+      color: #243044;
+      font-size: 19px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-pill.is-passed {
+      color: #159153;
+      background: #eaf8f0;
+    }
+
+    .status-pill.is-warning {
+      color: #b7791f;
+      background: #fff6df;
+    }
+
+    .status-pill.is-failed {
+      color: #cc3b32;
+      background: #fff0ef;
+    }
+
+    .tip-bar {
+      display: flex;
+      gap: 14px;
+      margin-top: 28px;
+      padding: 18px 20px;
+      border: 1px solid #d7eadf;
+      border-radius: 8px;
+      color: #277044;
+      background: linear-gradient(90deg, #f2fbf4 0%, #fbfffb 100%);
+    }
+
+    .tip-bar.is-blue {
+      border-color: #cfe1ff;
+      color: #1e5fae;
+      background: #f1f7ff;
+    }
+
+    .tip-bar i {
+      flex: 0 0 auto;
+      margin-top: 2px;
+      font-size: 22px;
+    }
+
+    .tip-title {
+      margin-bottom: 8px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .tip-text {
+      color: #5f6572;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .form-panel {
+      margin-bottom: 24px;
+      padding: 22px 28px 12px;
+      border: 1px solid #e0e7f0;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .form-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 24px;
+      color: #0c1322;
+      font-size: 18px;
+      line-height: 1.4;
+      font-weight: 800;
+    }
+
+    .form-panel-title i {
+      color: #1267f5;
+      font-size: 22px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 24px;
+    }
+
+    .form-grid.is-three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .test-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 48px;
+      margin: 0 0 12px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .progress-card {
+      padding: 18px;
+      border: 1px solid #e0e7f0;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .progress-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 12px;
+      color: #1f2937;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .progress-percent {
+      color: #075cf1;
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 14px;
+      color: #5f6572;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .migration-log-card {
+      margin-top: 24px;
+      overflow: hidden;
+      border: 1px solid #dfe7f1;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .migration-log-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 52px;
+      padding: 0 18px;
+      border-bottom: 1px solid #e8eef5;
+      color: #1f2937;
+      font-size: 15px;
+      font-weight: 700;
+      background: #fbfcfe;
+    }
+
+    .migration-log-count {
+      color: #667085;
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .migration-log-panel {
+      max-height: 350px;
+      overflow: auto;
+      padding: 12px 0;
+      color: #dbeafe;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.65;
+      background: #142033;
+    }
+
+    .migration-log-line {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 12px;
+      padding: 3px 18px;
+    }
+
+    .migration-log-time {
+      color: #7f9ab9;
+    }
+
+    .migration-log-message {
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .migration-log-line.is-error .migration-log-message {
+      color: #fca5a5;
+    }
+
+    .migration-log-line.is-warning .migration-log-message {
+      color: #fcd58b;
+    }
+
+    .migration-log-line.is-success .migration-log-message {
+      color: #86efac;
+    }
+
+    .migration-log-empty {
+      padding: 26px 18px;
+      color: #9bb0c9;
+      text-align: center;
+    }
+
+    .install-task-table {
+      margin-top: 24px;
+    }
+
+    .task-head,
+    .task-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1.1fr 1.4fr;
+      align-items: center;
+    }
+
+    .task-head {
+      min-height: 50px;
+      color: #667085;
+      font-size: 14px;
+      background: #fbfcfe;
+    }
+
+    .task-row {
+      min-height: 58px;
+      border-top: 1px solid #edf1f6;
+      font-size: 15px;
+    }
+
+    .task-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mini-bar {
+      width: 138px;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e4e8ee;
+    }
+
+    .mini-bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: #159a4f;
+    }
+
+    .task-row.is-running .mini-bar span {
+      background: #1167ff;
+    }
+
+    .finish-wrap {
+      max-width: 780px;
+      margin: 44px auto 0;
+      text-align: center;
+    }
+
+    .finish-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 26px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 48px;
+      background: linear-gradient(135deg, #23c966 0%, #079b45 100%);
+      box-shadow: 0 16px 32px rgba(8, 160, 74, .22);
+    }
+
+    .finish-title {
+      margin: 0;
+      color: #0c1322;
+      font-size: 30px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+
+    .finish-subtitle {
+      margin: 18px 0 34px;
+      color: #4b5563;
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    .login-card {
+      padding: 24px 26px;
+      border: 1px solid #dfe7f0;
+      border-radius: 8px;
+      text-align: left;
+      background: #fff;
+    }
+
+    .login-card-title {
+      margin: 0 0 22px;
+      color: #0c1322;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .credential-row {
+      display: grid;
+      grid-template-columns: 140px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .credential-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .credential-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #1f2937;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .credential-label i {
+      color: #2d3b50;
+      font-size: 18px;
+    }
+
+    .credential-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 6px;
+      color: #111827;
+      font-size: 15px;
+      background: #f7f9fc;
+      word-break: break-all;
+    }
+
+    .credential-value.is-link {
+      color: #009944;
+      background: #eefaf1;
+    }
+
+    .credential-action {
+      flex: 0 0 auto;
+      color: #7a8494;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .credential-value.is-link .credential-action {
+      color: #11a85b;
+    }
+
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-top: 34px;
+    }
+
+    .action-right {
+      display: flex;
+      justify-content: flex-end;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .agreement {
+      color: #1f2937;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .agreement a {
+      color: #0b65f0;
+      text-decoration: none;
+    }
+
+    .agreement-dialog .el-dialog {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .agreement-dialog .el-dialog__body {
+      padding: 0 26px 22px;
+    }
+
+    .agreement-content {
+      max-height: 56vh;
+      min-height: 220px;
+      overflow-y: auto;
+      padding: 2px 8px 0 0;
+      color: #374151;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .agreement-content h2 {
+      margin: 0 0 16px;
+      color: #0c1322;
+      font-size: 22px;
+      line-height: 1.35;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .agreement-content h3 {
+      margin: 22px 0 8px;
+      color: #111827;
+      font-size: 16px;
+      line-height: 1.45;
+      font-weight: 800;
+    }
+
+    .agreement-content p {
+      margin: 0 0 12px;
+    }
+
+    .el-button {
+      min-width: 150px;
+      height: 50px;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    .el-button--primary {
+      background: #075cf1;
+      border-color: #075cf1;
+      box-shadow: 0 10px 22px rgba(7, 92, 241, .18);
+    }
+
+    .el-button--primary:hover,
+    .el-button--primary:focus {
+      background: #126dff;
+      border-color: #126dff;
+    }
+
+    .el-button--default {
+      color: #075cf1;
+      border-color: #0b65f0;
+      background: #fff;
+    }
+
+    .el-button--text {
+      min-width: auto;
+      height: auto;
+      padding: 0;
+      color: #4b5563;
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .el-input__inner {
+      height: 42px;
+      border-color: #d8e0ea;
+      border-radius: 5px;
+      color: #1f2937;
+    }
+
+    .el-form-item__label {
+      color: #5f6572;
+      font-size: 14px;
+    }
+
+    .el-form-item {
+      margin-bottom: 22px;
+    }
+
+    .el-progress-bar__outer {
+      height: 12px !important;
+      background: #e7ebf0;
+    }
+
+    .el-progress-bar__inner {
+      background: #1267f5;
+    }
+
+    .el-loading-mask {
+      border-radius: inherit;
+    }
+
+    @media (max-width: 980px) {
+      .install-page {
+        padding: 16px;
+      }
+
+      .installer {
+        min-height: auto;
+      }
+
+      .installer.is-env-installer {
+        height: auto;
+        min-height: auto;
+      }
+
+      .installer-header {
+        height: 180px;
+      }
+
+      .brand {
+        left: 26px;
+        top: 54px;
+      }
+
+      .brand-icon {
+        width: 58px;
+        height: 58px;
+        font-size: 28px;
+      }
+
+      .brand-title {
+        font-size: 24px;
+      }
+
+      .brand-subtitle {
+        font-size: 15px;
+      }
+
+      .installer-body {
+        grid-template-columns: 1fr;
+      }
+
+      .installer.is-env-installer .installer-body {
+        height: auto;
+      }
+
+      .installer.is-env-installer .sidebar,
+      .installer.is-env-installer .content {
+        overflow: visible;
+      }
+
+      .sidebar {
+        padding: 18px;
+        border-right: 0;
+        border-bottom: 1px solid #edf3fb;
+      }
+
+      .step-list {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .step-item {
+        display: block;
+        min-height: 0;
+        padding: 12px 10px;
+        text-align: center;
+      }
+
+      .step-item::after,
+      .sidebar-art,
+      .notice-card {
+        display: none;
+      }
+
+      .step-badge {
+        width: 36px;
+        height: 36px;
+        margin: 0 auto 8px;
+      }
+
+      .step-title {
+        font-size: 14px;
+      }
+
+      .step-desc {
+        display: none;
+      }
+
+      .content {
+        padding: 24px 16px 28px;
+      }
+
+      .content-inner {
+        min-height: auto;
+      }
+
+      .content-inner.is-env-screen {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+      }
+
+      .content-inner.is-env-screen .data-table {
+        max-height: 52vh;
+        overflow-y: auto;
+      }
+
+      .data-head,
+      .data-row,
+      .task-head,
+      .task-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 14px 0;
+      }
+
+      .data-head,
+      .task-head {
+        display: none;
+      }
+
+      .data-cell {
+        padding: 0 16px;
+      }
+
+      .form-grid,
+      .form-grid.is-three {
+        grid-template-columns: 1fr;
+      }
+
+      .action-bar,
+      .action-right {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .el-button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .install-page {
+        padding: 0;
+      }
+
+      .installer {
+        border-radius: 0;
+      }
+
+      .installer-header {
+        height: 150px;
+        background-position: 58% center;
+      }
+
+      .brand {
+        left: 16px;
+        top: 42px;
+        gap: 12px;
+      }
+
+      .brand-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        font-size: 24px;
+      }
+
+      .brand-title {
+        font-size: 20px;
+      }
+
+      .brand-subtitle {
+        margin-top: 6px;
+        font-size: 13px;
+      }
+
+      .page-title,
+      .finish-title {
+        font-size: 24px;
+      }
+
+      .page-note,
+      .finish-subtitle {
+        font-size: 14px;
+      }
+
+      .credential-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="app" class="install-page" v-cloak>
+  <div class="installer" :class="{ 'is-env-installer': activeStep === 0 && !installed }" v-loading="pageLoading">
+    <header class="installer-header">
+      <div class="brand">
+        <div class="brand-icon"><i class="el-icon-box"></i></div>
+        <div>
+          <h1 class="brand-title">欢迎使用乖乖兔多商户系统安装向导</h1>
+          <p class="brand-subtitle">简单几步，快速完成安装</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="installer-body">
+      <aside class="sidebar">
+        <div class="step-list">
+          <div
+            v-for="(step, index) in steps"
+            :key="step.title"
+            class="step-item"
+            :class="stepClass(index)"
+          >
+            <div class="step-badge">
+              <i v-if="index < activeStep" class="el-icon-check"></i>
+              <span v-else>{{ index + 1 }}</span>
+            </div>
+            <div>
+              <div class="step-title">{{ step.title }}</div>
+              <div class="step-desc">{{ step.desc }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-art"></div>
+      </aside>
+
+      <main class="content">
+        <div class="content-inner" :class="{ 'is-env-screen': activeStep === 0 && !installed }">
+          <template v-if="existingInstallation && activeStep === 3">
+            <section class="finish-wrap">
+              <div class="finish-icon"><i class="el-icon-check"></i></div>
+              <h2 class="finish-title">系统已安装</h2>
+              <p class="finish-subtitle">检测到安装锁，安装入口已关闭。</p>
+
+              <div class="login-card">
+                <h3 class="login-card-title">后台管理登录信息</h3>
+                <div class="credential-row">
+                  <div class="credential-label"><i class="el-icon-s-promotion"></i>登录地址</div>
+                  <div class="credential-value is-link">
+                    <span>{{ completed.admin_url || status.admin_url || '/admin' }}</span>
+                    <i class="el-icon-link credential-action" @click="openAdmin"></i>
+                  </div>
+                </div>
+                <div class="credential-row" v-if="status.installed_at">
+                  <div class="credential-label"><i class="el-icon-time"></i>安装时间</div>
+                  <div class="credential-value">{{ status.installed_at }}</div>
+                </div>
+              </div>
+
+              <div class="tip-bar is-blue">
+                <i class="el-icon-info"></i>
+                <div>
+                  <div class="tip-title">温馨提示</div>
+                  <div class="tip-text">如需重新安装，请先确认并移除安装锁文件。</div>
+                </div>
+              </div>
+
+              <div class="action-bar" style="justify-content: center">
+                <el-button type="primary" icon="el-icon-right" @click="openAdmin">进入后台</el-button>
+              </div>
+            </section>
+          </template>
+
+          <template v-else-if="activeStep === 0">
+            <h2 class="page-title">环境检测</h2>
+            <p class="page-note">为了确保系统能够正常安装和运行，请先检测当前环境是否满足安装要求</p>
+
+            <div ref="envTable" class="data-table">
+              <div class="data-head">
+                <div class="data-cell">检测项</div>
+                <div class="data-cell">当前环境</div>
+                <div class="data-cell">要求</div>
+                <div class="data-cell">状态</div>
+              </div>
+              <div
+                v-for="item in env.items"
+                :key="item.key"
+                class="data-row"
+                :class="{ 'is-problem-focus': item.key === focusCheckKey }"
+                :data-check-key="item.key"
+              >
+                <div class="data-cell item-name">
+                  <i :class="iconForCheck(item.key)"></i>
+                  <span>{{ item.label }}</span>
+                </div>
+                <div class="data-cell">{{ item.current }}</div>
+                <div class="data-cell">{{ item.require }}</div>
+                <div class="data-cell">
+                  <span class="status-pill" :class="statusClass(item.status)">
+                    <i :class="statusIcon(item.status)"></i>
+                    {{ statusText(item.status) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tip-bar" :class="{ 'is-blue': env.passed }">
+              <i :class="env.passed ? 'el-icon-success' : 'el-icon-warning'"></i>
+              <div>
+                <div class="tip-title">{{ env.passed ? '环境检测已通过' : '部分环境未通过检测，请根据提示修复后重新检测' }}</div>
+                <div class="tip-text">不影响安装的项可忽略，安装完成后仍可在系统中配置。</div>
+              </div>
+            </div>
+
+            <div class="action-bar">
+              <el-checkbox v-model="agreed" class="agreement">
+                我已阅读并同意 <a href="javascript:void(0)" @click.stop.prevent="showAgreement">《软件安装许可协议》</a>
+              </el-checkbox>
+              <div class="action-right">
+                <el-button icon="el-icon-refresh" :loading="checking" @click="checkEnvironment">重新检测</el-button>
+                <el-button type="primary" :disabled="!env.passed" @click="goConfigStep">下一步 <i class="el-icon-arrow-right el-icon--right"></i></el-button>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="activeStep === 1">
+            <h2 class="page-title">配置</h2>
+            <p class="page-note">请配置系统相关参数</p>
+
+            <el-form ref="installForm" :model="form" :rules="rules" label-width="110px" label-position="right">
+              <section class="form-panel">
+                <h3 class="form-panel-title"><i class="el-icon-coin"></i>数据库配置</h3>
+                <div class="form-grid">
+                  <el-form-item label="服务器地址" prop="database.hostname">
+                    <el-input v-model.trim="form.database.hostname" placeholder="如：localhost" @blur="autoTestConfig('database')"></el-input>
+                  </el-form-item>
+                  <el-form-item label="端口" prop="database.hostport">
+                    <el-input-number v-model="form.database.hostport" :min="1" :max="65535" controls-position="right" style="width: 100%" @blur="autoTestConfig('database')"></el-input-number>
+                  </el-form-item>
+                  <el-form-item label="数据库名称" prop="database.database">
+                    <el-input v-model.trim="form.database.database" placeholder="请输入数据库名称" @blur="autoTestConfig('database')"></el-input>
+                  </el-form-item>
+                  <el-form-item label="表前缀" prop="database.prefix">
+                    <el-input v-model.trim="form.database.prefix" placeholder="默认 lf_" @blur="autoTestConfig('database')"></el-input>
+                  </el-form-item>
+                  <el-form-item label="用户名" prop="database.username">
+                    <el-input v-model.trim="form.database.username" placeholder="请输入用户名" @blur="autoTestConfig('database')"></el-input>
+                  </el-form-item>
+                  <el-form-item label="密码" prop="database.password">
+                    <el-input v-model="form.database.password" show-password placeholder="请输入密码" @blur="autoTestConfig('database')"></el-input>
+                  </el-form-item>
+                </div>
+                <div class="test-line">
+                  <span>{{ testResult.database.message || '未测试数据库连接' }}</span>
+                  <el-button icon="el-icon-connection" :loading="testing.database" @click="testConfig('database')">测试连接</el-button>
+                </div>
+              </section>
+
+              <section class="form-panel">
+                <h3 class="form-panel-title"><i class="el-icon-set-up"></i>Redis 配置</h3>
+                <div class="form-grid">
+                  <el-form-item label="服务器地址" prop="redis.host">
+                    <el-input v-model.trim="form.redis.host" placeholder="如：localhost" @blur="autoTestConfig('redis')"></el-input>
+                  </el-form-item>
+                  <el-form-item label="端口" prop="redis.port">
+                    <el-input-number v-model="form.redis.port" :min="1" :max="65535" controls-position="right" style="width: 100%" @blur="autoTestConfig('redis')"></el-input-number>
+                  </el-form-item>
+                  <el-form-item label="密码" prop="redis.password">
+                    <el-input v-model="form.redis.password" show-password placeholder="请输入密码，可为空" @blur="autoTestConfig('redis')"></el-input>
+                  </el-form-item>
+                  <el-form-item label="库序号" prop="redis.select">
+                    <el-input-number v-model="form.redis.select" :min="0" :precision="0" :step="1" controls-position="right" style="width: 100%" @change="autoTestConfig('redis')"></el-input-number>
+                  </el-form-item>
+                </div>
+                <div class="test-line">
+                  <span>{{ testResult.redis.message || '未测试 Redis 连接' }}</span>
+                  <el-button icon="el-icon-connection" :loading="testing.redis" @click="testConfig('redis')">测试连接</el-button>
+                </div>
+              </section>
+
+              <section class="form-panel">
+                <h3 class="form-panel-title"><i class="el-icon-user"></i>后台管理员</h3>
+                <div class="form-grid is-three">
+                  <el-form-item label="管理员账号" prop="admin.account">
+                    <el-input v-model.trim="form.admin.account" placeholder="默认 admin"></el-input>
+                  </el-form-item>
+                  <el-form-item label="管理员密码" prop="admin.password">
+                    <el-input v-model="form.admin.password" show-password placeholder="不填则自动生成"></el-input>
+                  </el-form-item>
+                  <el-form-item label="确认密码" prop="admin.confirm_password">
+                    <el-input v-model="form.admin.confirm_password" show-password placeholder="填写密码时必填"></el-input>
+                  </el-form-item>
+                </div>
+              </section>
+            </el-form>
+
+            <div class="action-bar">
+              <span></span>
+              <div class="action-right">
+                <el-button icon="el-icon-arrow-left" @click="activeStep = 0">上一步</el-button>
+                <el-button :loading="testingAll" @click="testConfig('all')">测试全部</el-button>
+                <el-button type="primary" :loading="installing || testingAll" @click="startInstall">下一步 <i class="el-icon-arrow-right el-icon--right"></i></el-button>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="activeStep === 2">
+            <h2 class="page-title">安装进度</h2>
+            <p class="page-note">系统正在安装中，请耐心等待，不要关闭或刷新页面</p>
+
+            <div class="progress-card">
+              <div class="progress-title-row">
+                <span>整体进度</span>
+                <span class="progress-percent">{{ progress.percent }}%</span>
+              </div>
+              <el-progress :percentage="progress.percent" :show-text="false" :status="progressStatus"></el-progress>
+              <div class="progress-meta">
+                <span>{{ progress.message }}</span>
+                <span v-if="progress.updated_at">更新时间：{{ progress.updated_at }}</span>
+              </div>
+            </div>
+
+            <div class="migration-log-card">
+              <div class="migration-log-head">
+                <span>数据库执行日志</span>
+                <span class="migration-log-count">共 {{ migrationLogs.length }} 条</span>
+              </div>
+              <div ref="migrationLogPanel" class="migration-log-panel">
+                <div
+                  v-for="(log, index) in migrationLogs"
+                  :key="log.time + '-' + index"
+                  class="migration-log-line"
+                  :class="{ 'is-error': log.level === 'error', 'is-warning': log.level === 'warning', 'is-success': log.level === 'success' }"
+                >
+                  <span class="migration-log-time">{{ log.time || '--:--:--' }}</span>
+                  <span class="migration-log-message">{{ log.message }}</span>
+                </div>
+                <div v-if="migrationLogs.length === 0" class="migration-log-empty">正在等待数据库执行日志...</div>
+              </div>
+            </div>
+
+            <div class="action-bar">
+              <el-checkbox v-model="agreed" class="agreement">
+                我已阅读并同意 <a href="javascript:void(0)" @click.stop.prevent="showAgreement">《软件安装许可协议》</a>
+              </el-checkbox>
+              <div class="action-right">
+                <el-button v-if="progress.step === 'failed'" icon="el-icon-arrow-left" @click="activeStep = 1">返回配置</el-button>
+                <el-button type="primary" :disabled="progress.step !== 'finished'" @click="activeStep = 3">下一步 <i class="el-icon-arrow-right el-icon--right"></i></el-button>
+              </div>
+            </div>
+          </template>
+
+          <template v-else>
+            <section class="finish-wrap">
+              <div class="finish-icon"><i class="el-icon-check"></i></div>
+              <h2 class="finish-title">系统安装完成！</h2>
+              <p class="finish-subtitle">恭喜您，乖乖兔多商户平台系统已成功安装并可正常使用。</p>
+
+              <div class="login-card">
+                <h3 class="login-card-title">后台管理登录信息</h3>
+                <div class="credential-row">
+                  <div class="credential-label"><i class="el-icon-s-promotion"></i>登录地址</div>
+                  <div class="credential-value is-link">
+                    <span>{{ completed.admin_url || status.admin_url || '/admin' }}</span>
+                    <i class="el-icon-link credential-action" @click="openAdmin"></i>
+                  </div>
+                </div>
+                <div class="credential-row">
+                  <div class="credential-label"><i class="el-icon-user"></i>用户名</div>
+                  <div class="credential-value">
+                    <span>{{ completed.admin_account || '-' }}</span>
+                    <i v-if="completed.admin_account" class="el-icon-document-copy credential-action" @click="copyText(completed.admin_account)"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tip-bar is-blue">
+                <i class="el-icon-info"></i>
+                <div>
+                  <div class="tip-title">温馨提示</div>
+                <div class="tip-text">请使用安装时设置的密码登录，建议登录后及时修改密码，保障系统安全。</div>
+                </div>
+              </div>
+
+              <div class="action-bar" style="justify-content: center">
+                <el-button type="primary" @click="openAdmin">完成 <i class="el-icon-arrow-right el-icon--right"></i></el-button>
+              </div>
+              <el-button type="text" @click="goHome">返回首页</el-button>
+            </section>
+          </template>
+        </div>
+      </main>
+    </section>
+  </div>
+
+  <el-dialog
+    title="软件安装许可协议"
+    class="agreement-dialog"
+    :visible.sync="agreementDialogVisible"
+    width="680px"
+    append-to-body
+  >
+    <div
+      class="agreement-content"
+      v-loading="agreementLoading"
+      v-html="agreementContent"
+    ></div>
+    <span slot="footer" class="dialog-footer">
+      <el-button @click="agreementDialogVisible = false">关闭</el-button>
+      <el-button type="primary" @click="agreeAndCloseAgreement">同意并关闭</el-button>
+    </span>
+  </el-dialog>
+</div>
+
+<script src="/install/vendor/vue/vue.min.js"></script>
+<script src="/install/vendor/element-ui/index.js"></script>
+<script>
+  new Vue({
+    el: '#app',
+    data: function () {
+      var validateConfirmPassword = function (rule, value, callback) {
+        var password = this.form.admin.password;
+        if (password && value !== password) {
+          callback(new Error('两次输入的管理员密码不一致'));
+          return;
+        }
+        callback();
+      }.bind(this);
+
+      return {
+        pageLoading: true,
+        checking: false,
+        installing: false,
+        testingAll: false,
+        installed: false,
+        existingInstallation: false,
+        agreed: false,
+        agreementDialogVisible: false,
+        agreementLoading: false,
+        agreementContent: '',
+        activeStep: 0,
+        focusCheckKey: '',
+        progressTimer: null,
+        autoTestTimer: {
+          database: null,
+          redis: null
+        },
+        autoTestSignature: {
+          database: '',
+          redis: ''
+        },
+        status: {},
+        steps: [
+          { title: '环境检测', desc: '检测系统运行环境' },
+          { title: '配置', desc: '配置系统相关参数' },
+          { title: '安装进度', desc: '系统安装中' },
+          { title: '安装完成', desc: '完成安装' }
+        ],
+        env: {
+          passed: false,
+          items: []
+        },
+        form: {
+          database: {
+            hostname: '127.0.0.1',
+            hostport: 3306,
+            database: '',
+            username: 'root',
+            password: '',
+            prefix: 'lf_'
+          },
+          redis: {
+            host: '127.0.0.1',
+            port: 6379,
+            password: '',
+            select: 0
+          },
+          admin: {
+            account: '',
+            password: '',
+            confirm_password: ''
+          }
+        },
+        testing: {
+          database: false,
+          redis: false
+        },
+        testResult: {
+          database: {},
+          redis: {}
+        },
+        progress: {
+          step: 'waiting',
+          percent: 0,
+          message: '等待安装',
+          data: {},
+          logs: [],
+          updated_at: ''
+        },
+        completed: {},
+        rules: {
+          'database.hostname': [
+            { required: true, message: '请输入数据库地址', trigger: 'blur' }
+          ],
+          'database.hostport': [
+            { required: true, message: '请输入数据库端口', trigger: 'change' }
+          ],
+          'database.database': [
+            { required: true, message: '请输入数据库名称', trigger: 'blur' },
+            { pattern: /^[A-Za-z0-9_]+$/, message: '只允许字母、数字和下划线', trigger: 'blur' }
+          ],
+          'database.username': [
+            { required: true, message: '请输入数据库账号', trigger: 'blur' }
+          ],
+          'database.prefix': [
+            { required: true, message: '请输入数据表前缀', trigger: 'blur' },
+            { pattern: /^[A-Za-z][A-Za-z0-9_]{0,31}$/, message: '以字母开头，1-32 位，仅支持字母、数字和下划线', trigger: 'blur' }
+          ],
+          'redis.host': [
+            { required: true, message: '请输入 Redis 地址', trigger: 'blur' }
+          ],
+          'redis.port': [
+            { required: true, message: '请输入 Redis 端口', trigger: 'change' }
+          ],
+          'redis.select': [
+            { required: true, message: '请输入 Redis 库序号', trigger: 'change' },
+            { type: 'integer', min: 0, message: 'Redis 库序号必须是非负整数', trigger: 'change' }
+          ],
+          'admin.account': [
+            { pattern: /^$|^[A-Za-z][A-Za-z0-9_]{2,31}$/, message: '以字母开头，3-32 位', trigger: 'blur' }
+          ],
+          'admin.password': [
+            { min: 6, message: '密码至少 6 位', trigger: 'blur' }
+          ],
+          'admin.confirm_password': [
+            { validator: validateConfirmPassword, trigger: 'blur' }
+          ]
+        }
+      };
+    },
+    computed: {
+      progressStatus: function () {
+        if (this.progress.step === 'failed') {
+          return 'exception';
+        }
+        if (this.progress.step === 'finished') {
+          return 'success';
+        }
+        return null;
+      },
+      migrationLogs: function () {
+        var logs = this.progress && Array.isArray(this.progress.logs) ? this.progress.logs : [];
+        return logs.filter(function (log) {
+          return log && log.step === 'migration' && log.message;
+        });
+      }
+    },
+    created: function () {
+      this.bootstrap();
+    },
+    beforeDestroy: function () {
+      this.stopProgressPolling();
+      this.clearAutoTestTimers();
+    },
+    methods: {
+      bootstrap: function () {
+        var self = this;
+        self.pageLoading = true;
+        self.api('/api/install/status')
+          .then(function (data) {
+            self.status = data || {};
+            self.installed = !!self.status.installed;
+            if (self.installed) {
+              self.existingInstallation = true;
+              self.completed = {
+                admin_url: self.status.admin_url || '/admin'
+              };
+              self.activeStep = 3;
+              return null;
+            }
+            return self.checkEnvironment();
+          })
+          .catch(function (error) {
+            self.showError(error);
+          })
+          .finally(function () {
+            self.pageLoading = false;
+          });
+      },
+      api: function (url, options) {
+        var fetchOptions = options || {};
+        fetchOptions.credentials = 'same-origin';
+        return fetch(url, fetchOptions)
+          .then(function (response) {
+            return response.json().catch(function () {
+              throw new Error('接口返回格式不正确');
+            });
+          })
+          .then(function (res) {
+            if (!res || res.status !== 200) {
+              throw res || new Error('请求失败');
+            }
+            return res.data || {};
+          });
+      },
+      postJson: function (url, payload) {
+        return this.api(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      },
+      checkEnvironment: function () {
+        var self = this;
+        self.checking = true;
+        return self.api('/api/install/check')
+          .then(function (data) {
+            self.env = data || { passed: false, items: [] };
+            self.focusFirstEnvironmentProblem();
+          })
+          .catch(function (error) {
+            self.showError(error);
+          })
+          .finally(function () {
+            self.checking = false;
+          });
+      },
+      focusFirstEnvironmentProblem: function () {
+        var items = this.env.items || [];
+        var problem = items.find(function (item) {
+          return item.key && item.key.indexOf('ext_') === 0 && item.status !== 'passed';
+        }) || items.find(function (item) {
+          return item.required && item.status !== 'passed';
+        });
+
+        this.focusCheckKey = problem ? problem.key : '';
+        if (!problem) {
+          return;
+        }
+
+        this.$nextTick(function () {
+          var table = this.$refs.envTable;
+          if (!table) {
+            return;
+          }
+
+          var row = table.querySelector('[data-check-key="' + problem.key + '"]');
+          if (!row) {
+            return;
+          }
+
+          table.scrollTop = Math.max(0, row.offsetTop - table.offsetTop - 52);
+        });
+      },
+      showAgreement: function () {
+        this.agreementDialogVisible = true;
+        this.loadAgreement();
+      },
+      loadAgreement: function () {
+        var self = this;
+        if (self.agreementContent || self.agreementLoading) {
+          return;
+        }
+
+        self.agreementLoading = true;
+        fetch('/install/agreement.html', {
+          credentials: 'same-origin',
+          cache: 'no-cache'
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error('协议内容读取失败');
+            }
+            return response.text();
+          })
+          .then(function (html) {
+            self.agreementContent = html;
+          })
+          .catch(function (error) {
+            self.agreementContent = '<p>协议内容读取失败，请刷新页面后重试。</p>';
+            self.showError(error);
+          })
+          .finally(function () {
+            self.agreementLoading = false;
+          });
+      },
+      agreeAndCloseAgreement: function () {
+        this.agreed = true;
+        this.agreementDialogVisible = false;
+      },
+      goConfigStep: function () {
+        if (!this.agreed) {
+          this.$message.warning('请先阅读并同意软件安装许可协议');
+          this.showAgreement();
+          return;
+        }
+
+        this.activeStep = 1;
+      },
+      autoTestConfig: function (type) {
+        var self = this;
+        if (self.activeStep !== 1 || self.installing || self.testingAll || self.testing[type] || !self.isConfigReadyForAutoTest(type)) {
+          return;
+        }
+        if (self.autoTestTimer[type]) {
+          clearTimeout(self.autoTestTimer[type]);
+        }
+        self.autoTestTimer[type] = setTimeout(function () {
+          if (self.testing[type] || !self.isConfigReadyForAutoTest(type)) {
+            return;
+          }
+          if (self.getConfigTestSignature(type) === self.autoTestSignature[type]) {
+            return;
+          }
+          self.testConfig(type, true);
+        }, 350);
+      },
+      testConfig: function (type, silent, rejectOnFail) {
+        var self = this;
+        return new Promise(function (resolve, reject) {
+          var run = function () {
+            var payload = self.buildPayload();
+            payload.type = type;
+            self.rememberConfigTestSignature(type);
+            if (type === 'database') {
+              self.testing.database = true;
+            } else if (type === 'redis') {
+              self.testing.redis = true;
+            } else {
+              self.testingAll = true;
+            }
+
+            self.postJson('/api/install/test', payload)
+              .then(function (data) {
+                var results = data.results || {};
+                if (results.database) {
+                  self.testResult.database = results.database;
+                }
+                if (results.redis) {
+                  self.testResult.redis = results.redis;
+                }
+                if (!silent) {
+                  self.$message.success(data.message || '测试通过');
+                }
+                resolve(data);
+              })
+              .catch(function (error) {
+                var data = error && error.data ? error.data : {};
+                var results = data.results || {};
+                if (results.database) {
+                  self.testResult.database = results.database;
+                }
+                if (results.redis) {
+                  self.testResult.redis = results.redis;
+                }
+                self.fillConfigTestError(type, error, results);
+                if (!silent) {
+                  self.showError(error);
+                }
+                if (rejectOnFail) {
+                  reject(error);
+                  return;
+                }
+                resolve(null);
+              })
+              .finally(function () {
+                self.testing.database = false;
+                self.testing.redis = false;
+                self.testingAll = false;
+              });
+          };
+
+          self.validateFieldsForTest(type, function (valid) {
+            if (valid) {
+              run();
+              return;
+            }
+            if (rejectOnFail) {
+              reject(new Error('请先完善数据库和 Redis 配置'));
+              return;
+            }
+            resolve(null);
+          });
+        });
+      },
+      isConfigReadyForAutoTest: function (type) {
+        if (type === 'redis') {
+          return !!this.form.redis.host
+            && this.isValidPort(this.form.redis.port)
+            && this.isValidRedisSelect(this.form.redis.select);
+        }
+
+        return !!this.form.database.hostname
+          && this.isValidPort(this.form.database.hostport)
+          && /^[A-Za-z0-9_]+$/.test(this.form.database.database || '')
+          && /^[A-Za-z][A-Za-z0-9_]{0,31}$/.test(this.form.database.prefix || '')
+          && !!this.form.database.username;
+      },
+      isValidPort: function (port) {
+        var value = Number(port);
+        return Number.isInteger(value) && value >= 1 && value <= 65535;
+      },
+      isValidRedisSelect: function (select) {
+        var value = Number(select);
+        return select !== '' && select !== null && Number.isInteger(value) && value >= 0;
+      },
+      getConfigTestSignature: function (type) {
+        var payload = this.buildPayload();
+        return JSON.stringify(type === 'redis' ? payload.redis : payload.database);
+      },
+      rememberConfigTestSignature: function (type) {
+        if (type === 'database' || type === 'all') {
+          this.autoTestSignature.database = this.getConfigTestSignature('database');
+        }
+        if (type === 'redis' || type === 'all') {
+          this.autoTestSignature.redis = this.getConfigTestSignature('redis');
+        }
+      },
+      fillConfigTestError: function (type, error, results) {
+        var message = (error && (error.message || error.msg)) || '连接测试失败';
+        if ((type === 'database' || type === 'all') && !results.database) {
+          this.testResult.database = { passed: false, message: message };
+        }
+        if ((type === 'redis' || type === 'all') && !results.redis) {
+          this.testResult.redis = { passed: false, message: message };
+        }
+      },
+      clearAutoTestTimers: function () {
+        if (this.autoTestTimer.database) {
+          clearTimeout(this.autoTestTimer.database);
+          this.autoTestTimer.database = null;
+        }
+        if (this.autoTestTimer.redis) {
+          clearTimeout(this.autoTestTimer.redis);
+          this.autoTestTimer.redis = null;
+        }
+      },
+      validateFieldsForTest: function (type, callback) {
+        var fields = [];
+        if (type === 'redis') {
+          fields = ['redis.host', 'redis.port', 'redis.select'];
+        } else {
+          fields = ['database.hostname', 'database.hostport', 'database.database', 'database.prefix', 'database.username'];
+          if (type === 'all') {
+            fields = fields.concat(['redis.host', 'redis.port', 'redis.select']);
+          }
+        }
+
+        var self = this;
+        var pending = fields.length;
+        var valid = true;
+        fields.forEach(function (field) {
+          self.$refs.installForm.validateField(field, function (message) {
+            if (message) {
+              valid = false;
+            }
+            pending -= 1;
+            if (pending === 0) {
+              callback(valid);
+            }
+          });
+        });
+      },
+      startInstall: function () {
+        var self = this;
+        this.$refs.installForm.validate(function (valid) {
+          if (!valid) {
+            return;
+          }
+
+          self.testConfig('all', true, true)
+            .then(function () {
+              return self.$confirm('确认开始安装？安装会写入 .env、执行数据库迁移并生成安装锁。', '开始安装', {
+                confirmButtonText: '开始安装',
+                cancelButtonText: '再检查一下',
+                type: 'warning'
+              });
+            })
+            .then(function () {
+              self.installing = true;
+              self.activeStep = 2;
+              self.progress = {
+                step: 'starting',
+                percent: 1,
+                message: '正在启动后台安装任务',
+                data: {},
+                logs: [],
+                updated_at: ''
+              };
+              self.existingInstallation = false;
+              return self.postJson('/api/install/run', self.buildPayload());
+            })
+            .then(function (data) {
+              self.progress = {
+                step: 'starting',
+                percent: 2,
+                message: '后台安装任务已启动',
+                data: data || {},
+                logs: [],
+                updated_at: ''
+              };
+              self.startProgressPolling();
+            })
+            .catch(function (error) {
+              if (error === 'cancel') {
+                return;
+              }
+              self.activeStep = self.activeStep === 2 ? 2 : 1;
+              self.showError(error);
+              if (self.activeStep === 2) {
+                self.getProgress();
+              }
+            })
+            .finally(function () {
+              self.installing = false;
+            });
+        });
+      },
+      startProgressPolling: function () {
+        var self = this;
+        self.stopProgressPolling();
+        self.getProgress();
+        self.progressTimer = setInterval(function () {
+          self.getProgress();
+        }, 1200);
+      },
+      stopProgressPolling: function () {
+        if (this.progressTimer) {
+          clearInterval(this.progressTimer);
+          this.progressTimer = null;
+        }
+      },
+      getProgress: function () {
+        var self = this;
+        return self.api('/api/install/progress')
+          .then(function (data) {
+            self.progress = data || self.progress;
+            self.$nextTick(function () {
+              self.scrollMigrationLogs();
+            });
+            if (self.progress.step === 'finished') {
+              self.completed = data.data || self.completed;
+              self.installed = true;
+              self.activeStep = 3;
+            }
+            if (self.progress.step === 'finished' || self.progress.step === 'failed') {
+              self.stopProgressPolling();
+            }
+          })
+          .catch(function () {});
+      },
+      buildPayload: function () {
+        return {
+          database: {
+            hostname: this.form.database.hostname,
+            hostport: this.form.database.hostport,
+            database: this.form.database.database,
+            username: this.form.database.username,
+            password: this.form.database.password,
+            prefix: this.form.database.prefix
+          },
+          redis: {
+            host: this.form.redis.host,
+            port: this.form.redis.port,
+            password: this.form.redis.password,
+            select: this.form.redis.select
+          },
+          admin: {
+            account: this.form.admin.account,
+            password: this.form.admin.password,
+            confirm_password: this.form.admin.confirm_password
+          }
+        };
+      },
+      stepClass: function (index) {
+        return {
+          'is-active': index === this.activeStep,
+          'is-done': index < this.activeStep
+        };
+      },
+      statusClass: function (status) {
+        return {
+          'is-passed': status === 'passed',
+          'is-warning': status === 'warning',
+          'is-failed': status !== 'passed' && status !== 'warning'
+        };
+      },
+      statusText: function (status) {
+        if (status === 'passed') {
+          return '通过';
+        }
+        if (status === 'warning') {
+          return '建议';
+        }
+        return '未通过';
+      },
+      statusIcon: function (status) {
+        if (status === 'passed') {
+          return 'el-icon-success';
+        }
+        if (status === 'warning') {
+          return 'el-icon-warning';
+        }
+        return 'el-icon-error';
+      },
+      iconForCheck: function (key) {
+        if (key.indexOf('php') >= 0 || key.indexOf('ext') >= 0) {
+          return 'el-icon-cpu';
+        }
+        if (key.indexOf('redis') >= 0) {
+          return 'el-icon-set-up';
+        }
+        if (key.indexOf('write') >= 0) {
+          return 'el-icon-folder-checked';
+        }
+        if (key.indexOf('disk') >= 0) {
+          return 'el-icon-notebook-2';
+        }
+        if (key.indexOf('memory') >= 0) {
+          return 'el-icon-odometer';
+        }
+        return 'el-icon-monitor';
+      },
+      scrollMigrationLogs: function () {
+        var panel = this.$refs.migrationLogPanel;
+        if (panel) {
+          panel.scrollTop = panel.scrollHeight;
+        }
+      },
+      copyText: function (text) {
+        if (!text) {
+          return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text);
+        }
+        this.$message.success('已复制');
+      },
+      openAdmin: function () {
+        var url = this.completed.admin_url || this.status.admin_url || '/admin';
+        window.location.href = url;
+      },
+      goHome: function () {
+        window.location.href = '/';
+      },
+      showError: function (error) {
+        var message = '请求失败';
+        if (error) {
+          message = error.message || error.msg || message;
+        }
+        this.$message.error(message);
+      }
+    }
+  });
+</script>
+</body>
+</html>

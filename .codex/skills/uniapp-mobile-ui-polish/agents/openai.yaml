@@ -1,0 +1,4 @@
+interface:
+  display_name: "UniApp 移动端 UI 优化"
+  short_description: "按项目规范优化 UniApp 移动端界面"
+  default_prompt: "使用 $uniapp-mobile-ui-polish 审查并优化当前 UniApp 移动端页面 UI。"

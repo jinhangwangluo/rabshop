@@ -1,0 +1,1 @@
+import{Q as t}from"./index-mNGOmRFu.js";import{s as a}from"./sse-C5qg4_WY.js";function s(e){return t({url:"/setting/config_template/save_template",method:"post",data:e})}function m(e){return t({url:"/setting/config_template/"+e,method:"get"})}function o(e,n){return a("/setting/config_template/ai_generate",e,n)}export{o as a,m as g,s};

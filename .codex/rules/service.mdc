@@ -1,0 +1,199 @@
+---
+description: 后端 Controller/Service 资源化架构规范，新建或修改控制器、服务层时参考
+alwaysApply: false
+---
+
+# 开发规范文档 (Development Specification)
+
+## 1. 概述
+
+为了保持代码风格一致性，提高开发效率和可维护性，本项目采用基于 `ResourceControllerTrait` 和 `ResourceServiceTrait` 的资源化开发模式。所有新的控制器（Controller）和服务（Service）应遵循以下规范。
+
+## 2. 控制器规范 (Controller)
+
+控制器负责处理请求、参数验证和调用服务层逻辑。
+
+控制器边界要求：
+
+*   控制器中禁止直接使用 `Db`、模型类、`getModel()` 或查询构造器处理数据查询、统计、分页和业务计算。
+*   控制器只负责读取请求参数、做基础校验、调用 Service，并用 `$this->success()` / `$this->fail()` 返回结果。
+*   控制器中禁止嵌套 `try/catch`，不要用重复 `try/catch` 包裹 Service 调用；业务异常优先交给 Service 和统一异常机制处理。
+*   业务规则、数据组装、跨表查询、统计计算、分页查询必须放在 Service 中。
+
+### 2.1 类定义
+
+*   **命名空间**: `app\controller\admin\{模块名}`
+*   **继承**: `app\controller\admin\AuthController`
+*   **接口**: `app\common\resource\ResourceControllerInterface`
+*   **Trait**: `app\common\resource\ResourceControllerTrait`
+
+### 2.2 依赖注入
+
+使用 PHP 8 的 `#[Inject]` 属性注入对应的 Service。
+
+```php
+#[Inject]
+protected MerchantService $service;
+```
+
+### 2.3 必须实现的方法
+
+控制器必须实现以下抽象方法以配置资源行为：
+
+1.  **`getStatusField(): string`**
+    *   返回用于控制数据状态的数据库字段名（如 `'status'`）。
+    *   用于 `show` 方法（修改状态）和默认的查询条件。
+
+2.  **`getValidateClassName(): string|null`**
+    *   返回验证器类的完整类名（如 `app\common\validate\MerchantValidate::class`）。
+    *   如果不需要验证，返回 `null`。
+
+3.  **`getIndexFields(): array`**
+    *   定义列表页（`index`）的搜索/筛选字段。
+    *   格式：`[['字段名', '默认值'], ...]`。
+    *   示例：`[['mer_name', ''], ['status', '']]`。
+
+4.  **`getRequestFields(): array`**
+    *   定义新增（`save`）和编辑（`update`）时接收的请求参数。
+    *   格式：`[['字段名', '默认值'], ...]`。
+    *   **注意**：只有在此定义的字段才会被传递给 Service。
+
+5.  **`getFormFields(): array`**
+    *   定义创建页（`create`）需要的初始参数（通常用于表单构建）。
+    *   格式：`[['字段名', '默认值'], ...]`。
+
+### 2.4 代码示例
+
+```php
+<?php
+
+namespace app\controller\admin\merchant;
+
+use app\common\resource\ResourceControllerInterface;
+use app\common\resource\ResourceControllerTrait;
+use app\controller\admin\AuthController;
+use app\common\service\merchant\MerchantService;
+use think\annotation\Inject;
+
+/**
+ * 商户管理控制器
+ */
+class Merchant extends AuthController implements ResourceControllerInterface
+{
+    use ResourceControllerTrait;
+
+    /**
+     * @var MerchantService
+     */
+    #[Inject]
+    protected MerchantService $service;
+
+    /**
+     * 状态字段
+     */
+    protected function getStatusField(): string
+    {
+        return 'status';
+    }
+
+    /**
+     * 验证类
+     */
+    protected function getValidateClassName(): string|null
+    {
+        return null; // 或 return MerchantValidate::class;
+    }
+
+    /**
+     * 搜索字段
+     */
+    protected function getIndexFields(): array
+    {
+        return [
+            ['mer_name', ''],
+            ['status', ''],
+            ['create_time', ''],
+        ];
+    }
+
+    /**
+     * POST请求获取的字段（用于新增/编辑）
+     */
+    protected function getRequestFields(): array
+    {
+        return [
+            ['mer_name', ''],
+            ['mer_phone', ''],
+            ['mer_address', ''],
+            ['status', 1],
+        ];
+    }
+
+    /**
+     * 表单初始化字段
+     */
+    protected function getFormFields(): array
+    {
+        return [];
+    }
+}
+```
+
+## 3. 服务层规范 (Service)
+
+服务层负责具体的业务逻辑处理、数据模型操作。
+
+### 3.1 类定义
+
+*   **命名空间**: `app\common\service\{模块名}`
+*   **继承**: `app\common\service\BaseService`
+*   **接口**: `app\common\resource\ResourceServiceInterfaceTrait` (注意：这是一个 Interface)
+*   **Trait**: `app\common\resource\ResourceServiceTrait`
+
+### 3.2 必须实现的方法
+
+1.  **`setModel(): string`**
+    *   返回该 Service 对应的数据模型（Model）类名。
+
+### 3.3 代码示例
+
+```php
+<?php
+
+namespace app\common\service\merchant;
+
+use app\common\model\merchant\Merchant;
+use app\common\resource\ResourceServiceInterfaceTrait;
+use app\common\resource\ResourceServiceTrait;
+use app\common\service\BaseService;
+
+/**
+ * 商户服务类
+ */
+class MerchantService extends BaseService implements ResourceServiceInterfaceTrait
+{
+    use ResourceServiceTrait;
+
+    /**
+     * 设置对应的模型
+     */
+    protected function setModel(): string
+    {
+        return Merchant::class;
+    }
+    
+    // 可在此扩展自定义业务逻辑方法
+}
+```
+
+## 4. 资源化开发优势
+
+*   **标准化**: 所有控制器结构统一，易于阅读和维护。
+*   **效率**: `ResourceControllerTrait` 内置了 `index` (列表), `create` (表单), `save` (新增), `read` (详情), `update` (更新), `delete` (删除), `show` (状态切换) 等常用方法，无需重复编写样板代码。
+*   **解耦**: 控制器专注于参数处理，业务逻辑封装在 Service 中。
+*   service中的错误返回统一使用throw new AdminResponseException() 异常处理,需要引入当前类：use app\common\exception\AdminResponseException;
+*   Service中的事务处理直接使用$this->transaction()方法
+*   Service 中禁止直接使用 `Db` facade、`Db::table()`、原生 SQL 或绕过模型/服务的查询入口。
+*   Service 查询自身资源时使用当前 Service 的 `getModel()`、`get()`、`getDefaultList()`、`count()` 等 BaseService/ResourceServiceTrait 能力。
+*   Service 需要操作其他模型或其他业务资源时，必须通过 `app()->make(对应Service::class)` 调用对应 Service，不能直接 new 模型或跨模型查询。
+*  需要在swoole扩展下运行，所有类中的方法都要为非静态

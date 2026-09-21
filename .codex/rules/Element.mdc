@@ -1,0 +1,110 @@
+---
+description: Vue3 + Element Plus 管理后台开发规范（组件、路由、API、Pinia），修改 template/admin 下前端代码时参考
+alwaysApply: false
+---
+
+# 前端开发规范 - Vue3 管理后台
+
+适用范围：基于 Vue 3、Element Plus、Pinia、Vue Router 4 和 Vite 的平台端管理后台。页面统一使用 `<script setup>`，样式使用 SCSS。
+
+## 0. 关键原则清单
+
+- 目录按业务分层，路由、接口、Store、视图职责清晰。
+- 页面组件采用 `template -> script setup -> style` 结构。
+- `v-for` 使用稳定业务 key，避免同元素同时使用 `v-if` 与 `v-for`。
+- API 统一经 `src/utils/request.js` 调用，页面不直接拼接请求。
+- 状态管理使用 Pinia，路由使用 Vue Router 4。
+- 页面样式优先使用 `scoped`，覆盖 Element Plus 使用 `:deep()`。
+
+## 1. 组件与组合式 API
+
+```vue
+<script setup>
+import { onBeforeMount, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getArticleList } from '@/api/article'
+
+defineOptions({ name: 'ArticleList' })
+
+const loading = ref(false)
+const list = ref([])
+
+async function fetchList() {
+  loading.value = true
+  try {
+    const response = await getArticleList()
+    list.value = response.data?.list || []
+  } catch (error) {
+    ElMessage.error(error.message || '加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onBeforeMount(fetchList)
+</script>
+```
+
+- 组件名称使用 `defineOptions({ name })`。
+- 组件依赖直接 `import`，不维护旧的 `components` 选项。
+- Props 使用 `defineProps`，事件使用 `defineEmits`。
+- 父组件通过组件 ref 调用子组件方法时，子组件使用 `defineExpose`。
+- `reactive` 表单重置使用 `Object.assign(form, defaults)`，不要整体替换对象。
+- 模板 ref 使用 `formRef`、`tableRef` 等独立命名，避免与表单对象重名。
+
+## 2. 模板与 Element Plus
+
+- `:visible.sync` 改为 `v-model`，其他 `.sync` 改为 `v-model:prop`。
+- `slot-scope` / `slot="name"` 改为 `#default` / `#name`。
+- 删除 `@click.native`，直接使用 `@click`。
+- `<el-submenu>` 改为 `<el-sub-menu>`。
+- `<el-dialog>` 使用 `v-model`，标题插槽使用 `#header`。
+- `<el-link :underline="false">` 改为 `<el-link underline="never">`。
+- 图标使用 `@element-plus/icons-vue` SVG 组件，不使用旧字体图标类名。
+- 表格设置稳定的 `row-key`；分页、表单和弹窗的 loading 状态必须可靠收敛。
+
+```vue
+<template>
+  <el-form :model="query" inline @submit.prevent>
+    <el-input v-model="query.keyword" clearable @keyup.enter="fetchList" />
+    <el-button type="primary" @click="fetchList">查询</el-button>
+  </el-form>
+
+  <el-table v-loading="loading" :data="list" row-key="id">
+    <el-table-column prop="title" label="标题" />
+    <el-table-column label="操作">
+      <template #default="{ row }">
+        <el-button text @click="handleEdit(row)">编辑</el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+</template>
+```
+
+## 3. 样式规范
+
+- 使用 `<style lang="scss" scoped>`。
+- 覆盖 Element Plus 使用 `:deep()`，避免全局选择器污染页面。
+- class 使用语义化命名或 BEM。
+- 优先使用项目已有 CSS 变量，避免重复定义主题色。
+
+## 4. 路由规范
+
+- 路由模块使用 Vue Router 4，并填写稳定的 `name` 和 `meta`。
+- 组件内使用 `useRouter()` / `useRoute()`。
+- 动态路由使用 `/:pathMatch(.*)*`，不要使用 Vue Router 3 的 `*`。
+- 动态路由通过 `router.addRoute()` 逐条注册。
+
+## 5. API 与反馈
+
+- API 统一放在 `src/api/`，请求统一经 `src/utils/request.js`。
+- 异步操作使用 `try/catch/finally` 或确保 loading 收敛的 Promise 链。
+- 普通提示使用 `ElMessage`，危险操作使用 `ElMessageBox.confirm`。
+- 认证失效和统一错误码由请求拦截器处理。
+
+## 6. Pinia
+
+- 每个业务模块创建独立的 `defineStore`。
+- 页面直接调用 store action，不使用 `mapState`、`mapActions`、`mapMutations`。
+- 解构响应式状态使用 `storeToRefs`，action 保持 store 方法引用。
+- 避免 state 与 action 同名，状态重置使用 store 内的明确方法。

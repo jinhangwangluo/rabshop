@@ -1,0 +1,1 @@
+import{_ as e,o as s,c as t,h as a,U as o}from"./index-mNGOmRFu.js";const i={class:"setting-file-page"},c=Object.assign({name:"SettingFile"},{__name:"index",setup(r){return(n,_)=>(s(),t("div",i,[a(o,{"is-page":!0,"is-show":0,"show-type-tabs":!0,"allowed-types":["image","video","audio","other"],"is-iframe":!1})]))}}),d=e(c,[["__scopeId","data-v-f2695286"]]);export{d as default};

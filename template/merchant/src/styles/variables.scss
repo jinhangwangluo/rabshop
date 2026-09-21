@@ -1,0 +1,152 @@
+// =============================================
+// 商户端颜色变量使用规范
+// =============================================
+//
+// 【两套变量体系并存，按场景选择：】
+//
+// 1. CSS 自定义属性（推荐，支持运行时动态切换主题）
+//    写法：var(--变量名)
+//    适用：所有 .vue 文件的 <style> 块，无论 scss / stylus / 无预处理器
+//
+//    示例：
+//      .btn        { background: var(--brand-primary); }
+//      .title      { color: var(--text-title); }
+//      .link       { color: var(--text-link); }
+//      .link:hover { color: var(--text-link-hover); }
+//      .card       { box-shadow: 0 4px 12px var(--brand-shadow); }
+//
+// 2. SCSS 变量（编译期静态替换）
+//    写法：$变量名
+//    适用：需要在 scss 运算（lighten/darken/mix 等）中使用时
+//    前提：文件顶部已 @import '@/styles/variables.scss'
+//         或在 vue.config.js 中配置了 additionalData 自动注入
+//
+//    示例：
+//      .btn        { background: $brand-primary; }
+//      .title      { color: $text-title; }
+//
+// 【变量速查表】
+//
+//  品牌色                          CSS var                      SCSS var
+//  主色                            var(--brand-primary)         $brand-primary
+//  hover色                         var(--brand-primary-dark)    $brand-primary-dark
+//  禁用/浅色                       var(--brand-primary-light)   $brand-primary-light
+//  激活背景                        var(--brand-primary-pale)    $brand-primary-pale
+//  按钮阴影                        var(--brand-shadow)          $brand-shadow
+//  按钮hover阴影                   var(--brand-shadow-hover)    $brand-shadow-hover
+//  卡片阴影                        var(--brand-shadow-card)     $brand-shadow-card
+//  输入框焦点光晕                  var(--brand-focus-shadow)    $brand-focus-shadow
+//
+//  字体色
+//  主要文字(标题/正文)             var(--text-primary)          $text-primary
+//  常规文字                        var(--text-regular)          $text-regular
+//  次要文字(说明/辅助)             var(--text-secondary)        $text-secondary
+//  占位符                          var(--text-placeholder)      $text-placeholder
+//  禁用                            var(--text-disabled)         $text-disabled
+//  链接默认                        var(--text-link)             $text-link
+//  链接hover                       var(--text-link-hover)       $text-link-hover
+//  反色(深色背景上)                var(--text-inverse)          $text-inverse
+//  反色柔和                        var(--text-inverse-soft)     $text-inverse-soft
+//  反色低调                        var(--text-inverse-muted)    $text-inverse-muted
+//  大标题                          var(--text-title)            $text-title
+//  副标题                          var(--text-subtitle)         $text-subtitle
+//  成功状态文字                    var(--text-success)          $text-success
+//  警告状态文字                    var(--text-warning)          $text-warning
+//  错误状态文字                    var(--text-danger)           $text-danger
+//  信息状态文字                    var(--text-info)             $text-info
+//  价格文字                        var(--text-price)            $text-price
+//
+// =============================================
+
+// 主色 - 蓝色
+$brand-primary:        #1456f0;   // 主色（按钮、链接、强调）
+$brand-primary-dark:   #3d7dfc;   // hover
+$brand-primary-light:  #67a6ff;   // 禁用/浅色
+$brand-primary-pale:   #eef2ff;   // 激活背景
+
+// 深色辅助色
+$brand-black:          #000000e0; // 导航/深色文字
+$brand-black-light:    #000000e0; // 深色渐变起点
+
+// 阴影透明色
+$brand-shadow:         rgba(20, 86, 240, 0.22);
+$brand-shadow-hover:   rgba(61, 125, 252, 0.28);
+$brand-shadow-card:    rgba(20, 86, 240, 0.12);
+
+// 焦点光晕
+$brand-focus-border:   #1456f0;
+$brand-focus-shadow:   rgba(20, 86, 240, 0.11);
+
+// =============================================
+// 字体颜色（Typography Colors）
+// =============================================
+
+// 正文文字
+$text-primary:         #000000e0; // 主要文字（标题、正文）
+$text-regular:         #303133;   // 常规文字（次级内容）
+$text-secondary:       #606266;   // 次要文字（说明、辅助）
+$text-placeholder:     #909399;   // 占位符文字
+$text-disabled:        #c0c4cc;   // 禁用文字
+
+// 链接文字
+$text-link:            $brand-primary;       // 链接默认
+$text-link-hover:      $brand-primary-dark;  // 链接悬停
+
+// 反色文字（用于深色背景上）
+$text-inverse:         #ffffff;              // 纯白（深色按钮/横条上）
+$text-inverse-soft:    rgba(255,255,255,0.85); // 柔和白（次要反色）
+$text-inverse-muted:   rgba(255,255,255,0.50); // 低调反色（提示、标注）
+
+// 标题颜色
+$text-title:           #000000e0; // 大标题
+$text-subtitle:        #303133;   // 副标题
+
+// 状态文字
+$text-success:         #389e0d;   // 成功
+$text-warning:         #d48806;   // 警告
+$text-danger:          #cf1322;   // 错误/危险
+$text-info:            #1456f0;   // 信息提示
+$text-price:           #0080FF;   // 价格
+
+// =============================================
+// base color
+// =============================================
+$blue:#324157;
+$light-blue:#3A71A8;
+$red:#C03639;
+$pink: #E65D6E;
+$green: #30B08F;
+$tiffany: #4AB7BD;
+$yellow:#FEC171;
+$panGreen: #30B08F;
+
+// layout surface
+$surface-page: #ffffff;
+$surface-page-hover: $brand-primary-pale;
+$surface-outline-soft: rgba(20, 86, 240, 0.11);
+
+// sidebar
+$menuText: $text-secondary;
+$menuActiveText: $brand-primary;
+$subMenuActiveText: $brand-primary; // https://github.com/ElemeFE/element/issues/12951
+
+$menuBg: $surface-page;
+$menuHover: $surface-page-hover;
+
+$subMenuBg: $surface-page;
+$subMenuHover: $brand-primary-pale;
+
+$sideBarWidth: 180px;
+
+// the :export directive is the magic sauce for webpack
+// https://www.bluematador.com/blog/how-to-share-variables-between-js-and-sass
+:export {
+  menuText: $menuText;
+  menuActiveText: $menuActiveText;
+  subMenuActiveText: $subMenuActiveText;
+  menuBg: $menuBg;
+  menuHover: $menuHover;
+  subMenuBg: $subMenuBg;
+  subMenuHover: $subMenuHover;
+  sideBarWidth: $sideBarWidth;
+}

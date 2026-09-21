@@ -1,0 +1,21 @@
+#!/usr/bin/env php
+<?php
+namespace think;
+
+// 命令行入口文件
+// 加载基础文件
+require __DIR__ . '/vendor/autoload.php';
+
+require __DIR__ . '/app/support/ProtectedAutoloader.php';
+\app\support\ProtectedAutoloader::register(__DIR__);
+
+// 应用初始化
+$app = new App();
+$app->initialize();
+
+// 迁移文件按版本目录组织（database/migrations/vX.Y）：
+// 在应用初始化完成（所有 vendor 服务 boot 完毕）之后注册版本化迁移命令覆盖，
+// 使 think-migration 的 migrate 系列命令被支持版本目录扫描的同名命令替换（不动 vendor 源码）。
+\app\common\command\migrate\RegisterVersionedMigrateCommands::register();
+
+$app->console->run();

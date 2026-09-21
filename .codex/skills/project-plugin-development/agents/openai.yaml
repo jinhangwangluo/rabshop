@@ -1,0 +1,4 @@
+interface:
+  display_name: "项目插件开发"
+  short_description: "生成、校验并确定性打包四端插件源码"
+  default_prompt: "使用 $project-plugin-development 初始化或校验当前项目的四端插件。"

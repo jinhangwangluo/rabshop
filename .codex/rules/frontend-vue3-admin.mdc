@@ -1,0 +1,55 @@
+---
+description: 平台端 Vue3 管理后台前端与 SCSS 规范（Element Plus），修改 template/admin 样式时参考
+alwaysApply: false
+---
+
+# Vue3 管理后台开发规范
+
+## 技术栈约定
+
+- 基于 Vue 3 + Element Plus + Pinia + Vue Router 4 + Vite。
+- 页面统一使用 `<script setup>` 和组合式 API。
+- 样式使用 SCSS，优先沿用项目主题变量和已有布局规范。
+
+## 目录与命名
+
+- `src/api/`：业务 API 封装。
+- `src/views/`：页面和业务组件。
+- `src/components/`：通用组件。
+- `src/store/`：Pinia stores。
+- 组件文件使用 PascalCase；API、工具文件使用 camelCase；样式文件使用 kebab-case。
+- 布尔变量使用 `is` / `has` / `can` 前缀。
+
+## Vue 组件
+
+- 使用 `defineOptions` 声明组件名称。
+- 使用 `defineProps`、`withDefaults`、`defineEmits` 声明组件契约。
+- `ref`、`reactive`、`computed`、`watch` 从 `vue` 导入。
+- 模板 ref 使用独立命名，例如 `formRef`，不要与 `reactive` 表单对象同名。
+- 子组件被父组件通过 ref 调用的方法必须使用 `defineExpose`。
+- 重置 `reactive` 对象使用 `Object.assign`，避免破坏模板绑定的响应式引用。
+
+## 模板与交互
+
+- 避免同元素同时使用 `v-if` 和 `v-for`；拆分为嵌套 `<template>`。
+- `v-for` 使用稳定业务 key。
+- 使用 `v-model` / `v-model:prop`，不使用 `.sync`。
+- 使用 `#header`、`#default` 等 Vue3 插槽语法。
+- 不使用 `@click.native`；组件事件直接使用 `@click`。
+- Element Plus 对话框使用 `v-model`，抽屉和弹窗关闭事件保持显式处理。
+- 复杂按钮优先使用 Element Plus 图标组件，避免继续依赖旧字体图标类名。
+
+## SCSS
+
+- 页面样式优先使用 `<style lang="scss" scoped>`。
+- 覆盖 Element Plus 样式使用 `:deep()`，避免全局选择器污染页面。
+- class 使用语义化命名或 BEM，避免以组件内部 DOM 结构作为唯一契约。
+- 颜色、间距、圆角优先使用项目已有 CSS 变量。
+- 响应式布局优先使用 flex、grid 和 Element Plus 栅格组件。
+
+## API、状态与路由
+
+- 页面通过 `src/api/*` 调用接口，统一由 request 封装处理鉴权和错误。
+- Pinia 状态直接调用 store；解构响应式状态使用 `storeToRefs`。
+- 路由跳转使用 `useRouter()`，路由信息使用 `useRoute()`。
+- 危险操作使用 `ElMessageBox.confirm`，普通反馈使用 `ElMessage`。

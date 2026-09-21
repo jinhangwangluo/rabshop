@@ -1,0 +1,6 @@
+interface:
+  display_name: "分布完整包打包"
+  short_description: "生成安全可清理且可复核的项目完整分布源码交付压缩包"
+  default_prompt: "使用 $distribution-package 生成并验证项目分布完整包。"
+policy:
+  allow_implicit_invocation: true

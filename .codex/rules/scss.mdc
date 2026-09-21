@@ -1,0 +1,87 @@
+---
+description: 商户端 CSS/SCSS 变量体系，编写或修改前端样式、主题色时参考，禁止硬编码色值
+alwaysApply: false
+---
+
+商户端CSS变量体系，两套变量体系并存，按场景选择：
+
+1. CSS 自定义属性（推荐，支持运行时动态切换主题）
+    写法：var(--变量名)
+   适用：所有 .vue 文件的 <style> 块，无论 scss / stylus / 无预处理器
+
+   示例：
+     .btn        { background: var(--brand-primary); }
+     .title      { color: var(--text-title); }
+      .link       { color: var(--text-link); }
+     .link:hover { color: var(--text-link-hover); }
+     .card       { box-shadow: 0 4px 12px var(--brand-shadow); }
+
+2. SCSS 变量（编译期静态替换）
+    写法：$变量名
+    适用：需要在 scss 运算（lighten/darken/mix 等）中使用时
+   前提：文件顶部已 @import '@/styles/variables.scss'
+        或在 vue.config.js 中配置了 additionalData 自动注入 
+3. 示例：
+      .btn        { background: $brand-primary; }
+      .title      { color: $text-title; }
+
+【变量速查表】
+
+  品牌色                          CSS var                      SCSS var
+  主金色                          var(--brand-primary)         $brand-primary
+  深金色(hover)                   var(--brand-primary-dark)    $brand-primary-dark
+  浅金色                          var(--brand-primary-light)   $brand-primary-light
+  淡金色(背景)                    var(--brand-primary-pale)    $brand-primary-pale
+  按钮阴影                        var(--brand-shadow)          $brand-shadow
+  按钮hover阴影                   var(--brand-shadow-hover)    $brand-shadow-hover
+  卡片阴影                        var(--brand-shadow-card)     $brand-shadow-card
+  输入框焦点光晕                  var(--brand-focus-shadow)    $brand-focus-shadow
+
+  字体色
+  主要文字(标题/正文)             var(--text-primary)          $text-primary
+  常规文字                        var(--text-regular)          $text-regular
+  次要文字(说明/辅助)             var(--text-secondary)        $text-secondary
+  占位符                          var(--text-placeholder)      $text-placeholder
+  禁用                            var(--text-disabled)         $text-disabled
+  链接默认                        var(--text-link)             $text-link
+  链接hover                       var(--text-link-hover)       $text-link-hover
+  反色(深色背景上)                var(--text-inverse)          $text-inverse
+  反色柔和                        var(--text-inverse-soft)     $text-inverse-soft
+  反色低调                        var(--text-inverse-muted)    $text-inverse-muted
+  大标题                          var(--text-title)            $text-title
+  副标题                          var(--text-subtitle)         $text-subtitle
+  成功状态文字                    var(--text-success)          $text-success
+  警告状态文字                    var(--text-warning)          $text-warning
+  错误状态文字                    var(--text-danger)           $text-danger
+  信息状态文字                    var(--text-info)             $text-info
+
+## CSS 自定义属性（推荐，日常优先用这种）
+// 任意 .vue 文件，无需 import，直接用
+.btn {
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  box-shadow: 0 4px 12px var(--brand-shadow);
+
+  &:hover {
+    background: var(--brand-primary-dark);
+    box-shadow: 0 6px 16px var(--brand-shadow-hover);
+  }
+}
+
+.title    { color: var(--text-title); }
+.desc     { color: var(--text-secondary); }
+.link     { color: var(--text-link); }
+.link:hover { color: var(--text-link-hover); }
+
+## SCSS 变量（需要做颜色运算时用）
+@import '@/styles/variables.scss';
+
+.btn { background: $brand-primary; }
+.title { color: $text-title; }
+// 支持 lighten/darken 等运算
+.bg { background: lighten($brand-primary, 20%); }
+
+核心原则：
+    普通样式 → var(--变量名)，运行时可切换主题
+    需要 SCSS 运算 → $变量名，编译期替换
+    禁止直接写 #c9a84c 等硬编码色值

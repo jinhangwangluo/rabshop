@@ -1,0 +1,65 @@
+---
+description: Vue3 管理后台详细开发规范（组件写法、路由、API、Pinia），修改 admin 前端时参考
+alwaysApply: false
+---
+
+# Vue3 管理后台开发规范
+
+平台端基于 Vue 3、Element Plus、Pinia、Vue Router 4 和 Vite。新增或迁移页面统一使用 `<script setup>` 与组合式 API，样式使用 SCSS。
+
+## 目录与分层
+
+- `src/api/`：按业务模块拆分接口文件，页面只调用 API 方法，不直接拼接请求。
+- `src/views/`：页面按业务模块分目录，页面负责组合查询、展示和交互。
+- `src/router/modules/`：路由按业务模块拆分，使用 Vue Router 4 配置。
+- `src/store/`：按业务模块使用 Pinia setup store。
+- `src/utils/request.js`：统一封装 Axios、token、错误处理。
+
+## Vue 组件写法
+
+- 组件结构：`template -> script setup -> style`。
+- 组件名称使用 `defineOptions({ name: 'PascalCaseName' })`。
+- 组件依赖直接 `import`，不再维护 `components` 选项。
+- Props 使用 `defineProps` 声明，事件使用 `defineEmits` 声明。
+- 父组件通过模板 ref 调用子组件方法时，子组件必须使用 `defineExpose` 明确暴露。
+- 页面状态使用 `ref` 或 `reactive`；重置 `reactive` 对象使用 `Object.assign`，不要整体替换对象。
+- 计算状态使用 `computed`，监听使用 `watch` / `watchEffect`。
+- 事件处理方法使用 `handleXxx`，数据获取方法使用 `fetchXxx` / `getXxx`。
+
+## 模板与指令
+
+- `v-for` 必须提供稳定的业务 key。
+- 避免同一元素同时使用 `v-if` 和 `v-for`，使用外层 `<template>` 拆分。
+- `:visible.sync` 改为 `v-model`，其他 `.sync` 改为 `v-model:prop`。
+- `slot-scope` / `slot="name"` 改为 `#default` / `#name`。
+- 删除 `@click.native` 等原生事件修饰符，直接使用 `@click`。
+- Element Plus 使用 `el-sub-menu`、`el-dialog v-model` 和 `#header` 插槽。
+- 图标使用 `@element-plus/icons-vue` 的 SVG 组件，不使用旧字体图标名。
+
+## 样式
+
+- 页面和组件样式优先使用 `<style lang="scss" scoped>`。
+- 覆盖第三方组件使用 `:deep()`，避免污染全局。
+- class 命名保持语义化，可采用 BEM。
+- 优先使用项目已有 CSS 变量，避免重复定义主题色。
+
+## 路由
+
+- 路由模块使用 Vue Router 4 配置，并填写稳定的 `name` 和 `meta`。
+- 组件内使用 `useRouter()` / `useRoute()`。
+- 动态路由使用 `/:pathMatch(.*)*`，不要使用 Vue Router 3 的 `*` 通配符。
+- 新增动态路由通过 `router.addRoute()` 逐条注册。
+
+## API 使用
+
+- API 统一从 `src/api/*` 调用，经 `src/utils/request.js` 发送。
+- 异步操作使用 `try/catch/finally` 或保证 loading 收敛的 Promise 链。
+- 错误提示优先使用 `ElMessage`；危险操作使用 `ElMessageBox.confirm`。
+- 认证失效、统一错误码等全局行为放在请求封装与拦截器中。
+
+## Pinia 使用
+
+- 每个业务模块创建独立的 `defineStore`。
+- 页面直接调用 store action，不使用 `mapState`、`mapActions`、`mapMutations`。
+- 解构 store 响应式状态使用 `storeToRefs`，调用 action 保持 store 方法引用。
+- 避免 state 与 action 同名；状态重置使用 store 内的明确方法。

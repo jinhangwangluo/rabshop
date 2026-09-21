@@ -1,0 +1,1 @@
+{"version":1,"defects":[],"times":{"SeckillProductServiceTest::testSkuImageUsesOrdinaryProductPics":0.004,"SeckillProductServiceTest::testSkuWithoutPicsKeepsAnEmptyImage":0}}

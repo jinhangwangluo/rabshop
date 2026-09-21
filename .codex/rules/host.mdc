@@ -1,0 +1,12 @@
+---
+description: 项目开发虚拟域名 http://127.0.0.1:25780，涉及 URL、API 调用、curl 测试时参考
+alwaysApply: true
+---
+
+# 当前项目的可访问虚拟域名：
+http://127.0.0.1:25780
+
+# 如果无法访问或者端口没有被监听使用命令启动：
+```shell
+php82 think swoole
+```
