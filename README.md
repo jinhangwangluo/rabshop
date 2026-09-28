@@ -18,16 +18,16 @@
 
 ## 技术栈
 
-| 层级 | 技术 |
-| --- | --- |
+| 层级 | 技术                                                       |
+| --- |----------------------------------------------------------|
 | 后端 | PHP >= 8.2、ThinkPHP 8、Think ORM、Think Queue、Think Swoole |
-| 数据 | MySQL、Redis |
-| 管理端 | Vue 2、Element UI、Vue Router、Vuex、ECharts、wangEditor |
-| 用户端 | UniApp、H5/小程序兼容、flv.js、qrcodejs2 |
-| 文件存储 | 本地上传、阿里云 OSS、腾讯云 COS、七牛云 |
-| 消息与实时 | WebSocket、后台消息中心、消息推送模板 |
-| 第三方生态 | 微信公众号、微信小程序、微信支付、支付宝、短信服务 |
-| AI 能力 | Chat、Embedding、AI 图片生成、内容润色写作、AI 配置草稿、客服知识库向量化 |
+| 数据 | MySQL、Redis                                              |
+| 管理端 | Vue 3、Element UI、Vue Router、Vuex、ECharts、wangEditor      |
+| 用户端 | UniApp、H5/小程序兼容、flv.js、qrcodejs2                         |
+| 文件存储 | 本地上传、阿里云 OSS、腾讯云 COS、七牛云                                 |
+| 消息与实时 | WebSocket、后台消息中心、消息推送模板                                  |
+| 第三方生态 | 微信公众号、微信小程序、微信支付、支付宝、短信服务                                |
+| AI 能力 | Chat、Embedding、AI 图片生成、内容润色写作、AI 配置草稿、客服知识库向量化           |
 
 ## 目录结构
 
@@ -39,8 +39,8 @@ app/common/service/  业务 Service 与领域服务
 database/migrations/ 数据库迁移文件
 route/               admin、merchant、mobile 路由定义
 rabbit/              上传、直播、微信、支付、AI、WebSocket 等基础服务封装
-template/admin/      总平台管理端 Vue2 源码
-template/merchant/   商户管理端 Vue2 源码
+template/admin/      总平台管理端 Vue3 源码
+template/merchant/   商户管理端 Vue3 源码
 template/uniapp/     UniApp/H5/小程序用户端源码
 public/              Web 入口与构建产物
 ```
