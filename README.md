@@ -4,7 +4,7 @@
 
 ## 欢迎加入群聊
 
-[qq群](./assets/qq.jpg)
+![qq群](./assets/qq.png)
 
 ## 系统定位
 
@@ -112,3 +112,57 @@ public/              Web 入口与构建产物
 - 平台端源码：`template/admin`
 - 商户端源码：`template/merchant`
 - 用户端源码：`template/uniapp`
+
+## 二次开发
+
+- **完整源码开放**：后端、总平台管理端、商户管理端、用户移动端源码全部提供，无加密、无闭源模块，可自由审计与改造。
+- **主流技术栈**：ThinkPHP 8 + Vue 3 + UniApp，均为社区成熟框架，团队上手成本低，招聘与维护友好。
+- **分层清晰**：路由、控制器、模型、Service 分层规范，`route/admin.php`、`route/merchant.php`、`route/mobile.php` 三端接口显式定义，改造成本可控。
+- **模块化扩展**：DIY 装修、消息推送、支付渠道、文件存储、AI 能力等均以模块化方式封装，可按需替换或新增服务商实现。
+- **数据结构可演进**：`database/migrations` 提供数据库迁移文件，支持二次开发后的增量升级，避免手改表结构。
+- **前后端分离**：管理端与用户端均为独立前端工程，可单独打包发布，也可替换为自有 UI 体系。
+
+## 企业用户解决方案
+
+- **私有化部署**：支持自有服务器 / 云服务器 / 内网环境部署，源码与数据完全自主可控，满足企业合规与数据安全要求。
+- **多商户平台方案**：适合搭建行业电商平台、产业带平台、连锁企业分销体系，平台统一招商运营，商户独立管理店铺。
+- **内容电商组合方案**：商品交易 + 知识付费 + 直播带货一体化，适合教育培训、文化传媒、零售品牌等需要内容运营的企业。
+- **营销体系方案**：付费会员、优惠券、积分签到、分销推广开箱即用，帮助企业快速搭建私域流量运营与用户留存体系。
+- **AI 降本增效方案**：内置 AI 辅助写作、内容润色、AI 生图、智能客服知识库，降低内容生产与客服人力成本。
+- **微信生态整合方案**：公众号、小程序、微信支付、模板消息/订阅消息全链路打通，无缝接入企业现有微信私域阵地。
+
+## 页面截图
+
+<table>
+  <tr>
+    <td align="center"><img src="./assets/页面截图/首页.png" width="200" alt="首页"/><br/><sub>首页</sub></td>
+    <td align="center"><img src="./assets/页面截图/分类.png" width="200" alt="分类"/><br/><sub>分类</sub></td>
+    <td align="center"><img src="./assets/页面截图/搜索页面.png" width="200" alt="搜索页面"/><br/><sub>搜索页面</sub></td>
+    <td align="center"><img src="./assets/页面截图/内容详情页.png" width="200" alt="内容详情页"/><br/><sub>内容详情页</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./assets/页面截图/音频图.png" width="200" alt="音频详情"/><br/><sub>音频详情</sub></td>
+    <td align="center"><img src="./assets/页面截图/vip.png" width="200" alt="VIP 会员"/><br/><sub>VIP 会员</sub></td>
+    <td align="center"><img src="./assets/页面截图/个人中心.png" width="200" alt="个人中心"/><br/><sub>个人中心</sub></td>
+    <td align="center"><img src="./assets/页面截图/悬浮导航+资产.png" width="200" alt="悬浮导航与资产"/><br/><sub>悬浮导航与资产</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./assets/页面截图/购物车.png" width="200" alt="购物车"/><br/><sub>购物车</sub></td>
+    <td align="center"><img src="./assets/页面截图/确认订单.png" width="200" alt="确认订单"/><br/><sub>确认订单</sub></td>
+    <td align="center"><img src="./assets/页面截图/确认支付.png" width="200" alt="确认支付"/><br/><sub>确认支付</sub></td>
+    <td align="center"><img src="./assets/页面截图/添加地址.png" width="200" alt="添加地址"/><br/><sub>添加地址</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./assets/页面截图/订单详情.png" width="200" alt="订单详情"/><br/><sub>订单详情</sub></td>
+    <td align="center"><img src="./assets/页面截图/订单评价.png" width="200" alt="订单评价"/><br/><sub>订单评价</sub></td>
+    <td align="center"><img src="./assets/页面截图/退款申请.png" width="200" alt="退款申请"/><br/><sub>退款申请</sub></td>
+    <td align="center"><img src="./assets/页面截图/退款列表.png" width="200" alt="退款列表"/><br/><sub>退款列表</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./assets/页面截图/商家入驻.png" width="200" alt="商家入驻"/><br/><sub>商家入驻</sub></td>
+    <td align="center"><img src="./assets/页面截图/优惠卷领取.png" width="200" alt="优惠券领取"/><br/><sub>优惠券领取</sub></td>
+    <td align="center"><img src="./assets/页面截图/积分.png" width="200" alt="积分"/><br/><sub>积分</sub></td>
+    <td align="center"><img src="./assets/页面截图/签到.png" width="200" alt="每日签到"/><br/><sub>每日签到</sub></td>
+  </tr>
+</table>
+
