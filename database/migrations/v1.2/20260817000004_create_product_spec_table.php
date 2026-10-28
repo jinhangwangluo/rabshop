@@ -32,7 +32,6 @@ class CreateProductSpecTable extends Migrator
         $table->addColumn('spec_template', 'json', ['null' => true, 'comment' => '规格模板内容(JSON数组，包含规格维度和值)']);
         $table->addColumn('sort', 'integer', ['limit' => 11, 'default' => 0, 'comment' => '排序（越大越靠前）']);
         $table->addColumn('status', 'boolean', ['limit' => 1, 'default' => 1, 'comment' => '状态：0-禁用，1-启用']);
-        $table->addColumn('spec_template', 'json', ['null' => true, 'comment' => '规格模板内容(JSON数组，包含规格维度和值)']);
         $table->addTimestamps();
         $table->addSoftDelete();
         $table->addIndex('merchant_id', ['name' => 'idx_merchant_id']);

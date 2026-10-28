@@ -64,11 +64,6 @@ class SeedProductBaseData extends Migrator
                 'update_time' => date('Y-m-d H:i:s'),
             ],
         ])->saveData();
-        $colorSpecId = (int) $this->getAdapter()->getConnection()->lastInsertId();
-        $this->table('product_spec_value')->insert([
-            ['spec_id' => $colorSpecId, 'merchant_id' => 0, 'value' => '红色', 'pic' => '', 'sort' => 100, 'status' => 1, 'create_time' => date('Y-m-d H:i:s'), 'update_time' => date('Y-m-d H:i:s')],
-            ['spec_id' => $colorSpecId, 'merchant_id' => 0, 'value' => '蓝色', 'pic' => '', 'sort' => 90, 'status' => 1, 'create_time' => date('Y-m-d H:i:s'), 'update_time' => date('Y-m-d H:i:s')],
-        ])->saveData();
 
         // 平台规格示例：尺寸（S/M/L）
         $this->table('product_spec')->insert([
@@ -91,12 +86,6 @@ class SeedProductBaseData extends Migrator
                 'create_time' => date('Y-m-d H:i:s'),
                 'update_time' => date('Y-m-d H:i:s'),
             ],
-        ])->saveData();
-        $sizeSpecId = (int) $this->getAdapter()->getConnection()->lastInsertId();
-        $this->table('product_spec_value')->insert([
-            ['spec_id' => $sizeSpecId, 'merchant_id' => 0, 'value' => 'S', 'pic' => '', 'sort' => 100, 'status' => 1, 'create_time' => date('Y-m-d H:i:s'), 'update_time' => date('Y-m-d H:i:s')],
-            ['spec_id' => $sizeSpecId, 'merchant_id' => 0, 'value' => 'M', 'pic' => '', 'sort' => 90, 'status' => 1, 'create_time' => date('Y-m-d H:i:s'), 'update_time' => date('Y-m-d H:i:s')],
-            ['spec_id' => $sizeSpecId, 'merchant_id' => 0, 'value' => 'L', 'pic' => '', 'sort' => 80, 'status' => 1, 'create_time' => date('Y-m-d H:i:s'), 'update_time' => date('Y-m-d H:i:s')],
         ])->saveData();
 
         // "全国包邮"运费模板（平台公共，is_free=1 全部地区免运费）
