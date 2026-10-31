@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<script>
+			var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(a)') ||
+				CSS.supports('top: constant(a)'))
+			document.write(
+				'<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' +
+				(coverSupport ? ', viewport-fit=cover' : '') + '" />')
+		</script>
+		<link rel="stylesheet" href="https://g.alicdn.com/de/prismplayer/2.12.1/skins/default/aliplayer-min.css" />
+		<!-- //（必须）H5模式播放器，需引用此css文件。 -->
+		<script charset="utf-8" type="text/javascript"
+			src="https://g.alicdn.com/de/prismplayer/2.12.1/aliplayer-h5-min.js"></script><!-- //（必须）引入H5模式的js文件。 -->
+		<style>
+			html.uni-h5-pc-shell-page,
+			html.uni-h5-pc-shell-page body {
+				width: 100%;
+				min-width: 0;
+				height: 100%;
+				margin: 0;
+				background: #eef1f5;
+			}
+
+			html.uni-h5-pc-shell-page body {
+				overflow: hidden;
+			}
+
+			.uni-h5-pc-shell-root {
+				box-sizing: border-box;
+				width: 100%;
+				height: 100%;
+				min-height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 24px;
+				background:
+					radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 32%),
+					linear-gradient(135deg, #eef1f5 0%, #f8fafc 48%, #e8edf5 100%);
+			}
+
+			.uni-h5-pc-shell {
+				width: 390px;
+				height: min(844px, calc(100vh - 48px));
+				min-height: 640px;
+				overflow: hidden;
+				background: #f9f9f9;
+				border: 1px solid rgba(15, 23, 42, 0.08);
+				border-radius: 26px;
+				box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16);
+			}
+
+			.uni-h5-pc-shell__iframe {
+				display: block;
+				width: 100%;
+				height: 100%;
+				border: 0;
+				background: #f9f9f9;
+			}
+
+			@media (max-height: 720px) {
+				.uni-h5-pc-shell-root {
+					padding: 16px;
+				}
+
+				.uni-h5-pc-shell {
+					height: calc(100vh - 32px);
+					min-height: 0;
+				}
+			}
+		</style>
+		<script>
+			(function () {
+				var INNER_QUERY_KEY = '__h5_pc_inner'
+				var minPcWidth = 768
+				var resizeTimer = null
+				var currentShellEnabled = false
+
+				function isMobileRuntime() {
+					var userAgent = navigator.userAgent || ''
+					if (/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+						return true
+					}
+					if (/iPad/i.test(userAgent)) {
+						return true
+					}
+					if (navigator.userAgentData && navigator.userAgentData.mobile) {
+						return true
+					}
+					return false
+				}
+
+				function hasInnerFlag() {
+					try {
+						return new URL(window.location.href).searchParams.get(INNER_QUERY_KEY) === '1'
+					} catch (error) {
+						return window.location.search.indexOf(INNER_QUERY_KEY + '=1') !== -1
+					}
+				}
+
+				function getViewportWidth() {
+					if (window.visualViewport && window.visualViewport.width) {
+						return Math.round(window.visualViewport.width)
+					}
+					return window.innerWidth || document.documentElement.clientWidth || 0
+				}
+
+				function shouldUsePcShell() {
+					return !hasInnerFlag() && !isMobileRuntime() && getViewportWidth() >= minPcWidth
+				}
+
+				function buildInnerUrl() {
+					var url = new URL(window.location.href)
+					url.searchParams.set(INNER_QUERY_KEY, '1')
+					return url.pathname + url.search + url.hash
+				}
+
+				function renderPcShell() {
+					var root = document.getElementById('app')
+					if (!root) return
+
+					document.documentElement.classList.add('uni-h5-pc-shell-page')
+					root.className = 'uni-h5-pc-shell-root'
+					root.innerHTML = ''
+
+					var shell = document.createElement('div')
+					var iframe = document.createElement('iframe')
+					shell.className = 'uni-h5-pc-shell'
+					iframe.className = 'uni-h5-pc-shell__iframe'
+					iframe.title = 'H5页面预览'
+					iframe.src = buildInnerUrl()
+					shell.appendChild(iframe)
+					root.appendChild(shell)
+				}
+
+				function syncPcShellByViewport() {
+					if (hasInnerFlag()) return
+
+					var nextShellEnabled = shouldUsePcShell()
+					if (nextShellEnabled === currentShellEnabled) return
+
+					currentShellEnabled = nextShellEnabled
+					window.__UNI_H5_PC_SHELL__ = nextShellEnabled
+					window.location.reload()
+				}
+
+				function handleViewportResize() {
+					clearTimeout(resizeTimer)
+					resizeTimer = setTimeout(syncPcShellByViewport, 120)
+				}
+
+				function bindViewportListener() {
+					if (hasInnerFlag()) return
+
+					window.addEventListener('resize', handleViewportResize)
+					window.addEventListener('orientationchange', handleViewportResize)
+					if (window.visualViewport) {
+						window.visualViewport.addEventListener('resize', handleViewportResize)
+					}
+				}
+
+				currentShellEnabled = shouldUsePcShell()
+				window.__UNI_H5_PC_SHELL__ = currentShellEnabled
+				bindViewportListener()
+
+				if (!window.__UNI_H5_PC_SHELL__) return
+
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', renderPcShell)
+				} else {
+					renderPcShell()
+				}
+			})()
+		</script>
+		<title></title>
+		<!--preload-links-->
+		<!--app-context-->
+	</head>
+	<body>
+		<div id="app">
+			<!--app-html-->
+		</div>
+		<script type="module">
+			if (!window.__UNI_H5_PC_SHELL__) {
+				import('./src/main.js')
+			}
+		</script>
+	</body>
+</html>

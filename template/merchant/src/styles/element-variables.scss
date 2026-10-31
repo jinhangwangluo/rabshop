@@ -1,0 +1,30 @@
+/**
+* Element Plus 主题变量覆盖（商户端）
+* Element Plus 使用 CSS 自定义属性（--el-*）控制主题色，
+* 此处通过 CSS 变量覆盖默认主色，使其与商户端品牌色一致。
+**/
+
+// 引入商户端品牌色变量
+@import './variables.scss';
+
+/* theme color - 商户端主题 */
+:root {
+  --el-color-primary: #{$brand-primary};
+  --el-color-primary-dark-2: #{$brand-primary-dark};
+  --el-color-primary-light-3: #{$brand-primary-light};
+  --el-color-primary-light-5: #{$brand-primary-light};
+  --el-color-primary-light-7: #{$brand-primary-pale};
+  --el-color-primary-light-8: #{$brand-primary-pale};
+  --el-color-primary-light-9: #{$brand-primary-pale};
+
+  --el-color-success: #13ce66;
+  --el-color-warning: #ffba00;
+  --el-color-danger: #ff4949;
+
+  --el-button-font-weight: 400;
+
+  --el-border-color-light: #dfe4ed;
+  --el-border-color-lighter: #e6ebf5;
+
+  --el-table-border: 1px solid #dfe6ec;
+}

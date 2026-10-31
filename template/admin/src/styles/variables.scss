@@ -1,0 +1,68 @@
+// base color
+$blue: #f34100;
+$light-blue: #ff6a2c;
+$red: #ba1a1a;
+$pink: #ff8c72;
+$green: #1ab394;
+$tiffany: #ffb59a;
+$yellow: #fec171;
+$panGreen: #1ab394;
+
+// sidebar
+$menuText: #4c4546;
+$menuActiveText: #f34100;
+$subMenuActiveText: #f34100; // https://github.com/ElemeFE/element/issues/12951
+
+$menuBg: #ffffff;
+$menuHover: #fff0ea;
+
+$subMenuBg: #ffffff;
+$subMenuHover: #fff5f0;
+
+$sideBarWidth: 180px;
+
+// Design tokens (derived from admin dashboard theme)
+$ds-primary: #f34100;
+$ds-primary-container: #ff6a2c;
+$ds-on-primary: #ffffff;
+$ds-background: #f9f9f9;
+$ds-surface-low: #f3f3f3;
+$ds-surface-card: #ffffff;
+$ds-on-surface: #1a1c1c;
+$ds-on-surface-variant: #4c4546;
+$ds-outline-ghost: rgba(26, 28, 28, 0.08);
+
+// brand tokens (used in admin views)
+$brand-primary:        #f34100;
+$brand-primary-dark:   #d93a00;
+$brand-primary-light:  #ff8a5c;
+$brand-primary-pale:   #fff0ea;
+$brand-shadow-card:    rgba(243, 65, 0, 0.12);
+$brand-focus-shadow:   rgba(243, 65, 0, 0.18);
+
+// text tokens
+$text-title:           #1a1c1c;
+$text-primary:         #1a1c1c;
+$text-regular:         #4c4546;
+$text-secondary:       #848484;
+$text-placeholder:     #b5b5b5;
+$text-disabled:        #c8c8c8;
+$text-success:         #1ab394;
+$text-danger:          #ba1a1a;
+
+// surface tokens
+$surface-page: #f9f9f9;
+$surface-page-hover: #fff5f0;
+
+// the :export directive is the magic sauce for webpack
+// https://www.bluematador.com/blog/how-to-share-variables-between-js-and-sass
+::export {
+  menuText: $menuText;
+  menuActiveText: $menuActiveText;
+  subMenuActiveText: $subMenuActiveText;
+  menuBg: $menuBg;
+  menuHover: $menuHover;
+  subMenuBg: $subMenuBg;
+  subMenuHover: $subMenuHover;
+  sideBarWidth: $sideBarWidth;
+}

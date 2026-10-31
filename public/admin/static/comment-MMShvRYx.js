@@ -1,0 +1,1 @@
+import{Q as e}from"./index-mNGOmRFu.js";function o(t){return e({url:"/content_comment",method:"get",params:t})}function r(t){return e({url:`/content_comment/${t}`,method:"delete"})}function s(t,n){return e({url:"/user/set_comment_ban",method:"post",data:{user_id:t,is_comment_ban:n}})}export{r as d,o as g,s};
