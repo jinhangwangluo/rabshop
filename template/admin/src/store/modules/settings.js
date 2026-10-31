@@ -37,7 +37,6 @@ export const useSettingsStore = defineStore('settings', () => {
     tagsView: tagsView,
     fixedHeader: fixedHeader,
     sidebarLogo: sidebarLogo,
-    isShowLink: true,
     themeMode: interfaceSettings.themeMode,
     menuStyle: interfaceSettings.menuStyle,
     themeColor: interfaceSettings.themeColor,
@@ -56,10 +55,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
     localStorage.set(interfaceKey, data)
     applyInterfaceTheme(data)
-  }
-
-  function setIsShowLink(value) {
-    state.isShowLink = value
   }
 
   function setInterfaceSettings(data) {
@@ -89,7 +84,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return {
     ...toRefs(state),
-    setIsShowLink,
     setInterfaceSettings,
     changeSetting,
     saveInterfaceSettings: saveInterfaceSettingsAction

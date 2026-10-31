@@ -108,7 +108,12 @@
 			</view>
 
 			<view class="user-center-page__recommend">
-				<guess-you-like title="为你推荐" :show-more="false" :limit="4" />
+				<guess-you-like
+					title="为你推荐"
+					:recommend-type="recommendType"
+					:show-more="false"
+					:limit="4"
+				/>
 			</view>
 
 			<view class="page-bottom-space"></view>
@@ -305,6 +310,7 @@
 	const serviceMenus = ref([])
 	const activitySigninEnabled = ref(false)
 	const memberConfigEnabled = ref(false)
+	const recommendType = ref('special')
 
 	/**
 	 * 当前是否已登录。
@@ -426,7 +432,7 @@
 	/**
 	 * 加载个人中心装修配置。
 	 *
-	 * @returns {Promise<void>} 成功时覆盖服务菜单与广告，失败时使用空配置。
+	 * @returns {Promise<void>} 成功时覆盖服务菜单、广告和推荐类型，失败时使用空配置。
 	 */
 	async function loadDecorateConfig() {
 		try {
@@ -446,6 +452,7 @@
 			bannerInfo.value = banner ? normalizeBannerInfo(banner) : {
 				...DEFAULT_BANNER_INFO
 			}
+			recommendType.value = normalizeRecommendType(data.recommend_type)
 		} catch (error) {
 			serviceMenus.value = cloneDefaultServiceMenus()
 			serviceMenusTitle.value = '我的服务'
@@ -456,6 +463,7 @@
 			bannerInfo.value = {
 				...DEFAULT_BANNER_INFO
 			}
+			recommendType.value = 'special'
 		}
 	}
 
@@ -527,6 +535,16 @@
 		} catch (error) {
 			// 用户资料失败时保留本地缓存或空态。
 		}
+	}
+
+	/**
+	 * 规范化后台下发的推荐展示类型。
+	 *
+	 * @param {string} value 后台推荐类型配置。
+	 * @returns {string} 仅返回 product 或 special，非法值回退专题。
+	 */
+	function normalizeRecommendType(value) {
+		return String(value || '').toLowerCase() === 'product' ? 'product' : 'special'
 	}
 
 	/**

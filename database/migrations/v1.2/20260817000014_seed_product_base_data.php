@@ -30,8 +30,9 @@ class SeedProductBaseData extends Migrator
      */
     public function change()
     {
+        $prefix = config('database.connections.' . config('database.default') . '.prefix');
         // 幂等保护：表已有数据（回滚后重跑/重复执行）则跳过，避免重复插入种子
-        $existing = (int) ($this->getAdapter()->fetchRow('SELECT COUNT(*) AS c FROM ll_product_service')['c'] ?? 0);
+        $existing = (int) ($this->getAdapter()->fetchRow('SELECT COUNT(*) AS c FROM ' . $prefix . 'product_service')['c'] ?? 0);
         if ($existing > 0) {
             return;
         }
@@ -64,7 +65,6 @@ class SeedProductBaseData extends Migrator
                 'update_time' => date('Y-m-d H:i:s'),
             ],
         ])->saveData();
-
         // 平台规格示例：尺寸（S/M/L）
         $this->table('product_spec')->insert([
             [

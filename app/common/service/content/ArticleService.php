@@ -201,7 +201,11 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
             $result['chapters'] = $articleContentService->getListByArticleId((int)$result['id']);
         }
 
-        return app()->make(TagService::class)->attachTagsToDetail($result, TagService::RELATION_TYPE_ARTICLE);
+        return app()->make(ContentProductRelationService::class)->attachProductsToDetail(
+            app()->make(TagService::class)->attachTagsToDetail($result, TagService::RELATION_TYPE_ARTICLE),
+            ContentProductRelationService::RELATION_TYPE_ARTICLE,
+            (int)($result['id'] ?? 0)
+        );
     }
 
     /**
@@ -237,12 +241,13 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
     public function resourceSave(array $data): array
     {
         [$tagIds, $syncTags] = $this->pullTagIds($data);
+        [$productIds, $syncProducts] = $this->pullProductIds($data);
         if (($data['mer_id'] ?? 0) == 0) {
             $data['audit_status'] = 1;
         } else {
             $data['audit_status'] = 0;
         }
-        $result = $this->saveContentWithType($data);
+        $result = $this->saveContentWithType($data, $syncProducts ? $productIds : null);
         $articleId = (int)($result['id'] ?? 0);
         if ($syncTags && $articleId > 0) {
             $ownerId = (int)($result['mer_id'] ?? ($data['mer_id'] ?? 0));
@@ -278,20 +283,27 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
     public function resourceUpdate(int|array $id, array $data)
     {
         [$tagIds, $syncTags] = $this->pullTagIds($data);
+        [$productIds, $syncProducts] = $this->pullProductIds($data);
+        $currentArticle = $this->get($id);
+        if (!$currentArticle) {
+            throw new AdminResponseException('内容不存在');
+        }
+
         //商户的内容
         if (!empty($data['mer_id'])) {
-            $article = $this->get($id);
-            if (!$article) {
-                throw new AdminResponseException('内容不存在');
-            }
-            if ($article['mer_id'] != $data['mer_id']) {
+            if ($currentArticle['mer_id'] != $data['mer_id']) {
                 throw new AdminResponseException('无权操作该内容');
             }
 
             // 修改后重新变为待审核状态
             $data['audit_status'] = 0;
         }
-        $this->updateContentWithType((int)$id, $data);
+        $this->updateContentWithType(
+            (int)$id,
+            $data,
+            $syncProducts ? $productIds : null,
+            (int)($currentArticle['mer_id'] ?? 0)
+        );
         $article = $this->get((int)$id);
         if ($syncTags) {
             $ownerId = $article ? (int)($article['mer_id'] ?? 0) : 0;
@@ -865,10 +877,11 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
      * 根据内容类型存储内容
      *
      * @param array $data 待校验或保存的内容主表、扩展字段及标签数据。
+     * @param array|null $productIds 关联商品ID；null 表示不处理关联。
      * @return array 已创建的内容主表及对应类型的扩展数据。
      * @throws AdminResponseException
      */
-    protected function saveContentWithType(array $data): array
+    protected function saveContentWithType(array $data, ?array $productIds = null): array
     {
         $contentType = (int)($data['content_type'] ?? ContentTypeEnum::GRAPHIC);
         $this->validateContentType($contentType);
@@ -881,7 +894,7 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
         // 对文字字段执行敏感词过滤
         $data = $this->filterSensitiveFields($data, ['title', 'description', 'keywords']);
 
-        $result = $this->transaction(function () use ($data, $contentType) {
+        $result = $this->transaction(function () use ($data, $contentType, $productIds) {
             $richContent = $trialContent = '';
             if (ContentTypeEnum::needsContent($contentType)) {
                 $richContent = $this->sanitizeRichContent($this->filterSensitiveText($data['content'] ?? ''));
@@ -904,6 +917,15 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
                 app()->make(ArticleContentService::class)->saveOrCreateByArticleId($articleId, $articleContent);
             }
 
+            if ($productIds !== null && $articleId > 0) {
+                app()->make(ContentProductRelationService::class)->syncRelation(
+                    ContentProductRelationService::RELATION_TYPE_ARTICLE,
+                    $articleId,
+                    $productIds,
+                    (int)($data['mer_id'] ?? 0)
+                );
+            }
+
             return $this->resourceRead($articleId) ?? [];
         });
 
@@ -916,10 +938,12 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
      *
      * @param int $id 内容记录标识。
      * @param array $data 待校验或保存的内容主表、扩展字段及标签数据。
+     * @param array|null $productIds 关联商品ID；null 表示不处理关联。
+     * @param int $ownerId 内容归属：0=平台，大于0=商户ID。
      * @return void 无返回值。
      * @throws AdminResponseException
      */
-    protected function updateContentWithType(int $id, array $data): void
+    protected function updateContentWithType(int $id, array $data, ?array $productIds = null, int $ownerId = 0): void
     {
         $contentType = (int)($data['content_type'] ?? ContentTypeEnum::GRAPHIC);
         $this->validateContentType($contentType);
@@ -950,13 +974,22 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
 
         $contentService = app()->make(ArticleContentService::class);
 
-        $this->transaction(function () use ($id, $data, $contentType, $contentService, $articleContent) {
+        $this->transaction(function () use ($id, $data, $contentType, $contentService, $articleContent, $productIds, $ownerId) {
             $this->update($id, $data);
 
             if (ContentTypeEnum::needsContent($contentType) || ContentTypeEnum::needsImages($contentType)) {
                 $contentService->saveOrCreateByArticleId($id, $articleContent);
             } else {
                 $contentService->deleteByArticleId($id);
+            }
+
+            if ($productIds !== null) {
+                app()->make(ContentProductRelationService::class)->syncRelation(
+                    ContentProductRelationService::RELATION_TYPE_ARTICLE,
+                    $id,
+                    $productIds,
+                    $ownerId
+                );
             }
         });
     }
@@ -974,6 +1007,10 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
             app()->make(ArticleContentService::class)->deleteByArticleId($id);
             app()->make(SpecialContentService::class)->deleteByArticleId($id);
             app()->make(TagRelationService::class)->deleteByRelation(TagService::RELATION_TYPE_ARTICLE, $id);
+            app()->make(ContentProductRelationService::class)->deleteByRelation(
+                ContentProductRelationService::RELATION_TYPE_ARTICLE,
+                $id
+            );
 
             return $deleted;
         });
@@ -1010,6 +1047,30 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
         unset($data['tag_ids']);
 
         return [$tagIds, $exists];
+    }
+
+    /**
+     * 提取关联商品ID，避免写入内容主表。
+     *
+     * null 表示本次请求未提交商品关联（编辑时保持原关联），空数组表示清空。
+     *
+     * @param array $data 内容保存数据，传入后会移除 product_ids。
+     * @return array{0: array, 1: bool} 第一个值为商品ID数组，第二个值表示请求中是否提交了商品关联。
+     * @throws AdminResponseException 商品关联参数不是数组时抛出
+     */
+    protected function pullProductIds(array &$data): array
+    {
+        $productIds = $data['product_ids'] ?? null;
+        unset($data['product_ids']);
+
+        if ($productIds === null) {
+            return [[], false];
+        }
+        if (!is_array($productIds)) {
+            throw new AdminResponseException('关联商品参数格式不正确');
+        }
+
+        return [$productIds, true];
     }
 
     /**
@@ -1234,6 +1295,46 @@ class ArticleService extends BaseService implements ResourceServiceInterfaceTrai
             'comment_total' => $commentTotal,
             'special_chapter_context' => $specialChapterContext,
         ];
+    }
+
+    /**
+     * 获取移动端内容关联商品。
+     *
+     * 内容未购买或处于付费墙状态时仍返回商品，保证内容详情页的带货入口可见；
+     * 商品本身的下架、审核和删除状态由商品服务过滤。
+     *
+     * @param int $articleId 内容ID
+     * @param int $userId 当前用户ID，匿名为0
+     * @param array $params 分页参数：page、limit
+     * @return array 商品列表和分页信息
+     * @throws AdminResponseException 内容不存在或不可访问时抛出
+     */
+    public function getMobileRelatedProducts(int $articleId, int $userId = 0, array $params = []): array
+    {
+        $displayConfig = app()->make(ContentDisplayConfigService::class);
+        if (!$displayConfig->isContentEnabled()) {
+            [$page, $limit] = $this->getPagesValue(true, true, $params, 20);
+            return $this->listData([], 0, ['has_more' => false], $page, $limit)->toArray();
+        }
+
+        $article = $this->get($articleId);
+        if (!$article) {
+            throw new AdminResponseException('内容不存在');
+        }
+        if ((int)($article['status'] ?? 0) !== 1) {
+            throw new AdminResponseException('内容已下架');
+        }
+        if ((int)($article['audit_status'] ?? 0) !== 1) {
+            throw new AdminResponseException('内容暂不可访问');
+        }
+
+        $params['user_id'] = $userId;
+
+        return app()->make(ContentProductRelationService::class)->getMobileProductPage(
+            ContentProductRelationService::RELATION_TYPE_ARTICLE,
+            $articleId,
+            $params
+        );
     }
 
     /**

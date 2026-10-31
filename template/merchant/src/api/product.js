@@ -56,6 +56,11 @@ export function getStoreProductList(params) {
   return request({ url: '/product', method: 'get', params })
 }
 
+/** 获取店铺商品选项（关联商品选择器数据源，仅返回当前商户在售商品）。 */
+export function getStoreProductOptions(params) {
+  return request({ url: '/product/options', method: 'get', params })
+}
+
 /** 获取店铺商品详情。 */
 export function getStoreProductRead(id) {
   return request({ url: `/product/${id}`, method: 'get' })

@@ -57,6 +57,9 @@ class CategoryService extends BaseService implements ResourceServiceInterfaceTra
     // 商品分类类型
     const PRODUCT_TYPE = 10;
 
+    /** 直播分类与专题分类必须使用独立类型。 */
+    const LIVE_TYPE = 11;
+
     /**
      * @var
      */
@@ -81,6 +84,20 @@ class CategoryService extends BaseService implements ResourceServiceInterfaceTra
         $data['type'] = $this->categoryType;
 
         return $this->create($data);
+    }
+
+    /**
+     * 查询更新不执行 Model 写入转换器，父级数组必须显式保存为宿主的斜杠路径。
+     * @param int|array $id 分类标识。 @param array $data 已由模块校验的字段。 @return bool 更新结果。
+     */
+    public function resourceUpdate(int|array $id, array $data)
+    {
+        if (isset($data['path']) && is_array($data['path'])) {
+            $data['pid'] ??= (int)(end($data['path']) ?: 0);
+            $data['path'] = $this->getModel()->setPathAttr($data['path']);
+        }
+        $this->update($id, $data);
+        return true;
     }
 
     /**

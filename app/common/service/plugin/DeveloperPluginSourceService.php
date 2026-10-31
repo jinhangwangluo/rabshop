@@ -123,7 +123,7 @@ class DeveloperPluginSourceService extends BaseService implements ResourceServic
     }
 
     /**
-     * 核对开发安装证明与当前源码一致，防止执行被替换的卸载脚本。
+     * 核对安装执行期间源码未再次变化，避免同一安装任务混用不同版本。
      *
      * @param string $code 插件编码。
      * @param array<string,mixed> $installedManifest 服务器保存的已安装清单。
@@ -131,26 +131,24 @@ class DeveloperPluginSourceService extends BaseService implements ResourceServic
      */
     public function assertInstalled(string $code, array $installedManifest): array
     {
-        $this->assertDeveloperInstallation($installedManifest);
+        $source = $this->resolveInstalled($code, $installedManifest);
         $proof = (string)$installedManifest['developer_source_sha256'];
-        $source = $this->resolve($code);
         if (!hash_equals($proof, $source['source_sha256'])) {
-            throw new PluginLifecycleException('开发源码与安装时不一致，须先恢复受信源码再卸载', 'DEVELOPER_SOURCE_CHANGED');
+            throw new PluginLifecycleException('安装执行期间开发源码发生变化，请重试', 'DEVELOPER_SOURCE_CHANGED');
         }
         return $source;
     }
 
     /**
-     * 重新安装用当前受信源码替换已安装源码，只要求记录确为开发来源安装。
+     * 核对开发安装身份并解析当前源码，供卸载和重新安装使用。
      *
-     * 与普通卸载的差别仅是跳过源码摘要比对：重装的语义就是让当前源码生效，
-     * 因此源码改动由调用方在确认后显式授权，源码本身仍须通过全部清单与入口校验。
+     * 开发期间允许修改源码，生命周期操作使用通过清单、入口及路径校验的当前文件。
      *
      * @param string $code 插件编码。
      * @param array<string,mixed> $installedManifest 服务器保存的已安装清单。
      * @return array{manifest:array<string,mixed>,declaration:array<string,mixed>,source_sha256:string,root:string} 当前源码验证结果。
      */
-    public function assertReinstallable(string $code, array $installedManifest): array
+    public function resolveInstalled(string $code, array $installedManifest): array
     {
         $this->assertDeveloperInstallation($installedManifest);
         return $this->resolve($code);
@@ -483,9 +481,12 @@ class DeveloperPluginSourceService extends BaseService implements ResourceServic
                 }
                 if ($resource === 'menus') {
                     $route = $item['route'] ?? '';
-                    if (!is_string($route) || !str_starts_with($route, '/' . $code . '/') || strlen($route) > 100
+                    // 顶级纯分组菜单允许恰好 /{code}，与安装器 InstalledPluginLifecycleExecutor 的放行规则一致。
+                    $isGroupRoute = $route === '/' . $code;
+                    if (!is_string($route) || (!str_starts_with($route, '/' . $code . '/') && !$isGroupRoute) || strlen($route) > 100
                         || !is_string($item['title'] ?? null) || trim($item['title']) === ''
-                        || !is_int($item['parent_id'] ?? 0) || ($item['parent_id'] ?? 0) < 0) {
+                        || !is_int($item['parent_id'] ?? 0) || ($item['parent_id'] ?? 0) < 0
+                        || (isset($item['parent_route']) && (!is_string($item['parent_route']) || strlen($item['parent_route']) > 100))) {
                         throw new PluginLifecycleException('开发插件菜单路径或标题无效', 'DEVELOPER_RESOURCE_INVALID');
                     }
                 } else {

@@ -21,6 +21,12 @@ H5_PUBLIC_DIR="${H5_PUBLIC_DIR:-$PUBLIC_DIR}"
 NPM_INSTALL_FLAGS="${NPM_INSTALL_FLAGS:---legacy-peer-deps}"
 SKIP_NPM_INSTALL="${SKIP_NPM_INSTALL:-0}"
 
+# lockfile 中存在 git+ssh 依赖（eve/raphael/Squire 等），无 GitHub SSH key 的环境
+# 会在 npm install 阶段失败；此处用进程级 git 配置把 ssh 重写为 https（仅本构建进程生效）
+export GIT_CONFIG_COUNT="${GIT_CONFIG_COUNT:-1}"
+export GIT_CONFIG_KEY_0="${GIT_CONFIG_KEY_0:-url.https://github.com/.insteadOf}"
+export GIT_CONFIG_VALUE_0="${GIT_CONFIG_VALUE_0:-ssh://git@github.com/}"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'

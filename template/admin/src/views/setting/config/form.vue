@@ -451,7 +451,7 @@
 </template>
 
 <script setup>
-import { getCurrentInstance, nextTick, onBeforeMount, reactive, ref } from 'vue'
+import { getCurrentInstance, nextTick, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { configSaveApi } from '@/api/system'
@@ -461,10 +461,14 @@ import setting from '@/settings'
 import { getConfigTemplateFindApi } from '@/api/setting'
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import { renderSafeDescription } from '@/utils/renderDescription'
+import { usePageSlots, slotAction, validateForm, operationResult, trackPageSlotAction } from '@/utils/pageSlots'
+import { dynamicSlotFields } from '@/utils/pageSlots/dynamicFields'
 
 defineOptions({ name: 'ConfigFormRender' })
 
 const route = useRoute()
+const configRouteName = route.name
+let loadedConfigId = null
 const router = useRouter()
 const tagsViewStore = useTagsViewStore()
 const instance = getCurrentInstance()
@@ -483,6 +487,23 @@ const fetchLoadingMap = reactive({})
 const imagePreviewVisible = ref(false)
 const previewImageUrl = ref('')
 const formRef = ref(null)
+const formReady = ref(false)
+let configLoadSequence = 0
+const handleSubmit = trackPageSlotAction('save', saveConfigForm)
+
+usePageSlots({
+  page: () => ({ id: 'setting.config.form', title: configName.value || '配置表单', description: configDesc.value || '填写并保存系统配置', entityId: configId.value, mode: 'edit' }),
+  identity: () => route.params.id,
+  ready: () => formReady.value && !!formRef.value,
+  busy: () => loading.value || submitting.value,
+  fields: () => dynamicSlotFields(collectAllFields(formFields), formData, isFieldVisible, field => [getSwitchActiveValue(field), getSwitchInactiveValue(field)]),
+  actions: {
+    validate: slotAction('校验配置表单', () => validateForm(formRef.value)),
+    save: slotAction('保存配置表单', handleSubmit),
+    reset: slotAction('重置表单', () => { handleReset(); return { ok: true } }),
+    close: slotAction('返回配置列表', async() => { await handleBack(); return { ok: true } })
+  }
+})
 
 const uploadAction = setting.baseUri + '/setting/file/upload'
 const uploadHeaders = {
@@ -620,9 +641,13 @@ async function handleFetchAndFill(field) {
 }
 
 async function loadFormConfig() {
+  const loadSequence = ++configLoadSequence
+  const id = configId.value
+  formReady.value = false
   setLoading(true)
   try {
-    const res = await getConfigTemplateFindApi(configId.value)
+    const res = await getConfigTemplateFindApi(id)
+    if (loadSequence !== configLoadSequence) return
     const config = res.data
     if (config) {
       if (config.config_name) {
@@ -648,13 +673,16 @@ async function loadFormConfig() {
           }
           buildFormRules(fields)
           initTabsActive(fields)
+          formReady.value = true
+          loadedConfigId = id
         }
       }
     }
   } catch (e) {
+    if (loadSequence !== configLoadSequence) return
     ElMessage.error(e.message || '加载表单配置失败')
   } finally {
-    setLoading(false)
+    if (loadSequence === configLoadSequence) setLoading(false)
   }
 }
 
@@ -783,14 +811,16 @@ function buildFormRules(fields) {
   resetReactiveObject(formRules, rules)
 }
 
-async function handleSubmit() {
+async function saveConfigForm(args, context) {
+  if (submitting.value) return { ok: false, code: 'BUSY', message: '正在提交' }
+  const id = configId.value
   const form = formRef.value
-  if (!form) return
-  const valid = await form.validate().catch(() => false)
-  if (!valid) {
+  const validation = await validateForm(form)
+  if (!validation.ok) {
     ElMessage.warning('请检查表单填写是否正确')
-    return
+    return validation
   }
+  context.assertCurrent()
   setSubmitting(true)
   try {
     const submitData = { ...formData }
@@ -804,12 +834,14 @@ async function handleSubmit() {
     })
 
     const res = await configSaveApi({
-      id: configId.value,
+      id,
       form_data: submitData
     })
     ElMessage.success(res.message || '提交成功')
+    return { ok: true }
   } catch (e) {
     ElMessage.error(e.message || '提交失败')
+    return operationResult(e)
   } finally {
     setSubmitting(false)
   }
@@ -821,7 +853,7 @@ function handleReset() {
 }
 
 function handleBack() {
-  router.push({ name: 'system_config' })
+  return router.push({ name: 'system_config' })
 }
 
 function handleCopyText(field) {
@@ -993,13 +1025,26 @@ function handleCustomUploadRemove(field, index) {
   formData[field.props.field] = list
 }
 
-onBeforeMount(() => {
+watch(() => [route.name, route.params.id], () => {
+  if (route.name !== configRouteName) {
+    if (loading.value) {
+      ++configLoadSequence
+      setLoading(false)
+      formReady.value = false
+    }
+    return
+  }
+  if (loadedConfigId === route.params.id && formReady.value) return
   configId.value = route.params.id || null
   configName.value = route.query.name || ''
+  formReady.value = false
+  formFields.splice(0)
+  resetReactiveObject(formData)
+  resetReactiveObject(formRules)
   if (configId.value) {
     loadFormConfig()
   }
-})
+}, { immediate: true, flush: 'sync' })
 </script>
 
 <style scoped lang="scss">

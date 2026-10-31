@@ -109,18 +109,16 @@ class DeveloperPluginLifecycleService extends BaseService implements ResourceSer
             $reason = $item['blocked_reason'];
             if ($state !== 'uninstalled' && $plugin !== null && !$developer) {
                 $reason = '同编码插件已通过市场或其他来源安装，请先从原入口安全卸载';
-            } elseif ($sourceChanged) {
-                $reason = $reason !== '' ? $reason : '开发源码与安装时不一致，须先恢复受信源码';
             } elseif (!in_array($state, ['uninstalled', 'active', 'disabled', 'failed'], true)) {
                 $reason = '插件生命周期任务进行中，请等待任务完成或处理失败恢复';
-            } elseif ($state === 'failed') {
-                $reason = $reason !== '' ? $reason : '上次生命周期操作失败，请核对任务与迁移账本后恢复';
             }
             $canManage = ($context['can_manage_developer'] ?? false) === true;
             $item['can_install'] = $canManage && $reason === '' && $state === 'uninstalled';
-            $item['can_uninstall'] = $canManage && $reason === '' && $developer && in_array($state, ['active', 'disabled'], true);
-            // 重新安装会用当前源码替换已安装源码，因此源码改动不是阻塞原因。
-            $item['can_reinstall'] = $canManage && !$sourceInvalid && $developer && in_array($state, ['active', 'disabled'], true);
+            $item['can_uninstall'] = $canManage && $reason === '' && $developer && in_array($state, ['active', 'disabled', 'failed'], true);
+            /*
+             * 开发源码改动与失败状态均允许发起恢复，实际执行仍核对迁移账本。
+             */
+            $item['can_reinstall'] = $canManage && !$sourceInvalid && $developer && in_array($state, ['active', 'disabled', 'failed'], true);
             // 下载只导出已验证源码，与安装状态和源码改动无关。
             $item['can_download'] = $canManage && !$sourceInvalid;
             $item['source_changed'] = $sourceChanged;
@@ -181,8 +179,8 @@ class DeveloperPluginLifecycleService extends BaseService implements ResourceSer
         }
         $plugin = $this->repository->findPlugin($code);
         $manifest = is_array($plugin['manifest_json'] ?? null) ? $plugin['manifest_json'] : [];
-        $source = $this->sources->assertInstalled($code, $manifest);
-        if (!in_array($plugin['lifecycle_status'] ?? 'uninstalled', ['active', 'disabled'], true)) {
+        $source = $this->sources->resolveInstalled($code, $manifest);
+        if (!in_array($plugin['lifecycle_status'] ?? 'uninstalled', ['active', 'disabled', 'failed'], true)) {
             throw new PluginLifecycleException('当前开发插件状态不允许卸载，请先核对生命周期任务与迁移账本', 'INVALID_LIFECYCLE_TRANSITION');
         }
         return $this->lifecycle->uninstall($this->request($code, $payload, $context, $source, 'uninstall', $plugin));
@@ -191,7 +189,7 @@ class DeveloperPluginLifecycleService extends BaseService implements ResourceSer
     /**
      * 用当前受信源码重新安装开发插件，卸载与安装各是一次真实生命周期任务。
      *
-     * 重装即“按当前源码生效”：允许当前源码与安装时不同，但替换授权由服务器写入任务载荷；
+     * 重装即“按当前源码生效”：卸载与安装均重新验证服务器固定开发目录源码；
      * 卸载未成功时保持原状态并返回该任务错误，不在未知状态下继续安装。
      *
      * @param string $code 插件目录编码。
@@ -209,8 +207,8 @@ class DeveloperPluginLifecycleService extends BaseService implements ResourceSer
         $source = $this->sources->resolve($code);
         $plugin = $this->repository->findPlugin($code);
         $manifest = is_array($plugin['manifest_json'] ?? null) ? $plugin['manifest_json'] : [];
-        if ($plugin === null || !in_array((string)($plugin['lifecycle_status'] ?? ''), ['active', 'disabled'], true)) {
-            throw new PluginLifecycleException('仅已安装或已停用的开发插件可以重新安装', 'INVALID_LIFECYCLE_TRANSITION');
+        if ($plugin === null || !in_array((string)($plugin['lifecycle_status'] ?? ''), ['active', 'disabled', 'failed'], true)) {
+            throw new PluginLifecycleException('仅已安装、已停用或异常的开发插件可以重新安装', 'INVALID_LIFECYCLE_TRANSITION');
         }
         if (($manifest['installation_source'] ?? '') !== 'developer') {
             throw new PluginLifecycleException('同编码插件不是开发来源安装，请先从原入口卸载', 'DEVELOPER_INSTALLATION_REQUIRED');
@@ -225,7 +223,7 @@ class DeveloperPluginLifecycleService extends BaseService implements ResourceSer
             'uninstall',
             $plugin,
             $keys['uninstall'],
-            ['developer_source_replacement' => true, 'reinstall_base_key' => $keys['base'], 'reinstall_source_changed' => $sourceChanged]
+            ['reinstall_base_key' => $keys['base'], 'reinstall_source_changed' => $sourceChanged]
         ));
         if ((string)($removed['status'] ?? '') !== 'succeeded') {
             return $removed;

@@ -398,6 +398,46 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
     }
 
     /**
+     * 获取移动端专题关联商品。
+     *
+     * 专题未购买时仍返回商品，保证专题详情页的带货入口可见；
+     * 商品本身的下架、审核和删除状态由商品服务过滤。
+     *
+     * @param int $specialId 专题ID
+     * @param int $userId 当前用户ID，匿名为0
+     * @param array $params 分页参数：page、limit
+     * @return array 商品列表和分页信息
+     * @throws AdminResponseException 专题不存在或不可访问时抛出
+     */
+    public function getMobileRelatedProducts(int $specialId, int $userId = 0, array $params = []): array
+    {
+        $displayConfig = app()->make(ContentDisplayConfigService::class);
+        if (!$displayConfig->isSpecialEnabled()) {
+            [$page, $limit] = $this->getPagesValue(true, true, $params, 20);
+            return $this->listData([], 0, ['has_more' => false], $page, $limit)->toArray();
+        }
+
+        $special = $this->get($specialId);
+        if (!$special) {
+            throw new AdminResponseException('专题不存在');
+        }
+        if ((int)($special['status'] ?? 0) !== 1) {
+            throw new AdminResponseException('专题已下架');
+        }
+        if ((int)($special['audit_status'] ?? 0) !== AuditStatusEnum::APPROVED) {
+            throw new AdminResponseException('专题暂不可访问');
+        }
+
+        $params['user_id'] = $userId;
+
+        return app()->make(ContentProductRelationService::class)->getMobileProductPage(
+            ContentProductRelationService::RELATION_TYPE_SPECIAL,
+            $specialId,
+            $params
+        );
+    }
+
+    /**
      * 获取移动端专题音频列表。
      *
      * @param int $specialId 专题记录标识。
@@ -884,7 +924,11 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
         $result['contents'] = $contents;
         $result['content_count'] = count($contents);
 
-        return app()->make(TagService::class)->attachTagsToDetail($result, TagService::RELATION_TYPE_SPECIAL);
+        return app()->make(ContentProductRelationService::class)->attachProductsToDetail(
+            app()->make(TagService::class)->attachTagsToDetail($result, TagService::RELATION_TYPE_SPECIAL),
+            ContentProductRelationService::RELATION_TYPE_SPECIAL,
+            $id
+        );
     }
 
     /**
@@ -941,7 +985,8 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
     public function resourceSave(array $data): array
     {
         [$tagIds, $syncTags] = $this->pullTagIds($data);
-        $result = $this->saveSpecialWithContents($data);
+        [$productIds, $syncProducts] = $this->pullProductIds($data);
+        $result = $this->saveSpecialWithContents($data, $syncProducts ? $productIds : null);
         $specialId = (int)($result['id'] ?? 0);
         if ($syncTags && $specialId > 0) {
             $ownerId = (int)($result['merchant_id'] ?? ($data['merchant_id'] ?? 0));
@@ -968,7 +1013,23 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
     public function resourceUpdate(int|array $id, array $data)
     {
         [$tagIds, $syncTags] = $this->pullTagIds($data);
-        $this->updateSpecialWithContents((int)$id, $data);
+        [$productIds, $syncProducts] = $this->pullProductIds($data);
+        $current = $this->get((int)$id);
+        if (!$current) {
+            throw new AdminResponseException('专题不存在');
+        }
+        $currentOwnerId = (int)($current['merchant_id'] ?? 0);
+        // 平台端允许传入 merchant_id；商户端请求白名单不包含该字段，始终保持当前商户。
+        $ownerId = array_key_exists('merchant_id', $data) ? (int)$data['merchant_id'] : $currentOwnerId;
+        if ($ownerId !== $currentOwnerId && !$syncProducts) {
+            throw new AdminResponseException('变更专题所属商户时请重新选择关联商品');
+        }
+        $this->updateSpecialWithContents(
+            (int)$id,
+            $data,
+            $syncProducts ? $productIds : null,
+            $ownerId
+        );
         if ($syncTags) {
             $special = $this->get((int)$id);
             $ownerId = $special ? (int)($special['merchant_id'] ?? 0) : 0;
@@ -998,10 +1059,11 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
      * 创建专题并绑定内容
      *
      * @param array $data 专题主表、标签及关联内容配置。
+     * @param array|null $productIds 关联商品ID；null 表示不处理关联。
      * @return array 已创建并绑定内容的专题详情。
      * @throws AdminResponseException
      */
-    protected function saveSpecialWithContents(array $data): array
+    protected function saveSpecialWithContents(array $data, ?array $productIds = null): array
     {
         $this->validateSpecialCategoryRequired($data);
         $this->validateSpecialCoverRequired($data);
@@ -1023,13 +1085,22 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
         // 对文字字段执行敏感词过滤
         $data = $this->filterSensitiveFields($data, ['title', 'description', 'keywords']);
 
-        return $this->transaction(function () use ($data, $contents) {
+        return $this->transaction(function () use ($data, $contents, $productIds) {
             $special = $this->create($data);
             $specialId = (int)($special['id'] ?? 0);
 
             if ($specialId > 0 && $contents) {
                 $this->syncContents($specialId, $contents);
                 $this->update($specialId, ['content_count' => count($contents)]);
+            }
+
+            if ($productIds !== null && $specialId > 0) {
+                app()->make(ContentProductRelationService::class)->syncRelation(
+                    ContentProductRelationService::RELATION_TYPE_SPECIAL,
+                    $specialId,
+                    $productIds,
+                    (int)($data['merchant_id'] ?? 0)
+                );
             }
 
             $result = $this->getInfo($specialId) ?? [];
@@ -1052,10 +1123,12 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
      *
      * @param int $id 专题记录标识。
      * @param array $data 专题主表、标签及关联内容配置。
+     * @param array|null $productIds 关联商品ID；null 表示不处理关联。
+     * @param int $ownerId 专题归属：0=平台，大于0=商户ID。
      * @return void 无返回值。
      * @throws AdminResponseException
      */
-    protected function updateSpecialWithContents(int $id, array $data): void
+    protected function updateSpecialWithContents(int $id, array $data, ?array $productIds = null, int $ownerId = 0): void
     {
         $this->validateSpecialCategoryRequired($data);
         $this->validateSpecialCoverRequired($data);
@@ -1071,7 +1144,7 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
         // 对文字字段执行敏感词过滤
         $data = $this->filterSensitiveFields($data, ['title', 'description', 'keywords']);
 
-        $this->transaction(function () use ($id, $data, $contents) {
+        $this->transaction(function () use ($id, $data, $contents, $productIds, $ownerId) {
             $current = $this->get($id);
             if ($current && (int)($current['merchant_id'] ?? 0) > 0) {
                 $data['audit_status'] = 0;
@@ -1083,6 +1156,15 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
             if ($contents !== null) {
                 $this->syncContents($id, $contents);
                 $this->update($id, ['content_count' => count($contents)]);
+            }
+
+            if ($productIds !== null) {
+                app()->make(ContentProductRelationService::class)->syncRelation(
+                    ContentProductRelationService::RELATION_TYPE_SPECIAL,
+                    $id,
+                    $productIds,
+                    $ownerId
+                );
             }
 
             $fresh = $this->get($id);
@@ -1110,6 +1192,10 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
             $deleted = $this->delete($id);
             app()->make(SpecialContentService::class)->deleteBySpecialId($id);
             app()->make(TagRelationService::class)->deleteByRelation(TagService::RELATION_TYPE_SPECIAL, $id);
+            app()->make(ContentProductRelationService::class)->deleteByRelation(
+                ContentProductRelationService::RELATION_TYPE_SPECIAL,
+                $id
+            );
 
             return $deleted;
         });
@@ -1128,6 +1214,30 @@ class SpecialService extends BaseService implements ResourceServiceInterfaceTrai
         unset($data['tag_ids']);
 
         return [$tagIds, $exists];
+    }
+
+    /**
+     * 提取关联商品ID，避免写入专题主表。
+     *
+     * null 表示本次请求未提交商品关联（编辑时保持原关联），空数组表示清空。
+     *
+     * @param array $data 专题保存数据，传入后会移除 product_ids。
+     * @return array{0: array, 1: bool} 第一个值为商品ID数组，第二个值表示请求中是否提交了商品关联。
+     * @throws AdminResponseException 商品关联参数不是数组时抛出
+     */
+    protected function pullProductIds(array &$data): array
+    {
+        $productIds = $data['product_ids'] ?? null;
+        unset($data['product_ids']);
+
+        if ($productIds === null) {
+            return [[], false];
+        }
+        if (!is_array($productIds)) {
+            throw new AdminResponseException('关联商品参数格式不正确');
+        }
+
+        return [$productIds, true];
     }
 
     /**

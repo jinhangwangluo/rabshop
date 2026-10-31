@@ -1876,8 +1876,11 @@ a {
   cursor: not-allowed;
 }
 
-.el-button.el-button--default:hover,
-.el-button.el-button--default:focus {
+/*
+ * 默认尺寸也使用 default 类，不能覆盖主按钮的交互文字颜色。
+ */
+.el-button.el-button--default:not(.el-button--primary):hover,
+.el-button.el-button--default:not(.el-button--primary):focus {
   border-color: var(--mannage-color-hover-bre);
   background-color: var(--dashboard-accent-soft);
   color: var(--mannage-color);
@@ -2138,6 +2141,7 @@ a {
   background-color: var(--dashboard-surface-muted);
 }
 
-.el-button.el-button--default:hover, .el-button.el-button--default:focus{
+.el-button.el-button--default:not(.el-button--primary):hover,
+.el-button.el-button--default:not(.el-button--primary):focus {
   color: var(--mannage-color) !important;
 }

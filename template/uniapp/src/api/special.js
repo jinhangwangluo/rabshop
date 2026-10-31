@@ -144,3 +144,23 @@ export function recordSpecialPreview(data = {}, options = {}) {
     ...options
   })
 }
+
+/**
+ * 获取专题关联商品列表。
+ *
+ * 使用场景：专题详情页「关联商品」区块初始化及触底加载更多时调用；
+ * 匿名用户可访问，登录后返回会员价相关字段。
+ *
+ * @param {Object} params 查询参数。
+ * @param {number|string} params.id 专题 ID。
+ * @param {number} params.page 页码，默认 1。
+ * @param {number} params.limit 每页数量，最大 20。
+ * @param {Object} options 透传给请求封装的附加选项。
+ * @returns {Promise<Object>} 成功时 `data` 返回 list、total、page、limit、totalPage、has_more。
+ */
+export function getSpecialProducts(params = {}, options = {}) {
+  return get('special/products', params, {
+    ...SPECIAL_OPTIONAL_AUTH,
+    ...options
+  })
+}

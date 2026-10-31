@@ -77,6 +77,49 @@
           </view>
         </view>
 
+        <view v-if="relatedProducts.length" class="special-section special-related">
+          <view class="special-related__head">
+            <text class="special-section__title">{{ RELATED_PRODUCT_TITLE }}</text>
+            <view v-if="relatedHasMore" class="special-related__more" hover-class="special-related__more--hover" @click="handleRelatedMore">
+              <text class="special-related__more-text">查看更多</text>
+              <text class="iconfont icon-right special-related__more-arrow"></text>
+            </view>
+          </view>
+
+          <view class="special-related__list">
+            <view
+              v-for="item in relatedProducts"
+              :key="item.renderKey"
+              class="related-card"
+              hover-class="related-card--hover"
+              @click="handleProductClick(item)"
+            >
+              <view class="related-card__cover">
+                <image v-if="item.image" class="related-card__image" :src="item.image" mode="aspectFill" />
+                <view v-else class="related-card__placeholder">
+                  <text>商品</text>
+                </view>
+              </view>
+
+              <view class="related-card__body">
+                <text class="related-card__title"><text
+                  v-if="item.firstTagText"
+                  class="related-card__title-badge"
+                  :style="item.firstTagStyle"
+                >{{ item.firstTagText }}</text>{{ item.title }}</text>
+                <text class="related-card__desc">{{ item.salesText }}</text>
+
+                <view class="related-card__foot">
+                  <text class="related-card__price">{{ item.priceText }}</text>
+                  <view class="related-card__buy" hover-class="related-card__buy--hover" @click.stop="handleProductClick(item)">
+                    <text class="related-card__buy-text">购买</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
         <view class="special-guess">
           <guess-you-like
             :show-more="false"
@@ -143,13 +186,19 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getSpecialDetail, recordSpecialPreview, toggleSpecialFavorite } from '@/api/special'
+import { getSpecialDetail, getSpecialProducts, recordSpecialPreview, toggleSpecialFavorite } from '@/api/special'
 import { addCart, buyNow } from '@/api/cart'
+import { normalizeDisplayTags } from '@/utils/tag'
 
 const SPECIAL_ORDER_TYPE = 3
 const CONTENT_TYPE_NOVEL = 3
 const CONTENT_TYPE_AUDIO = 5
 const CONTENT_TYPE_VIDEO = 6
+
+// 「关联商品」区块标题，接口返回空列表时整个区块隐藏。
+const RELATED_PRODUCT_TITLE = '关联商品'
+// 首页展示的商品数量，超出部分通过「查看更多」进入商品列表页。
+const RELATED_PRODUCT_LIMIT = 4
 
 function createEmptyDetail() {
   return {
@@ -285,6 +334,81 @@ function normalizeDetail(payload = {}) {
   }
 }
 
+/**
+ * 把后端标签对象转换为可内联渲染的样式串。
+ * 标签颜色由后台配置，必须走行内样式，不能写死在 scss 里。
+ *
+ * @param {Object} tag 规范化后的标签对象。
+ * @returns {string} 行内样式字符串。
+ */
+function buildInlineTagStyle(tag = {}) {
+  const style = []
+  const textColor = String(tag.text_color || '').trim()
+  const bgColor = String(tag.bg_color || '').trim()
+  const borderColor = String(tag.border_color || '').trim()
+
+  if (textColor) {
+    style.push(`color: ${textColor};`)
+  }
+  if (bgColor) {
+    style.push(`background-color: ${bgColor};`)
+  }
+  if (borderColor) {
+    style.push('border-style: solid;')
+    style.push(`border-color: ${borderColor};`)
+  }
+
+  return style.join(' ')
+}
+
+/**
+ * 格式化商品销量文案，与 DIY 商品组件保持一致。
+ *
+ * @param {number} value 展示销量。
+ * @returns {string} 销量文案。
+ */
+function formatSalesText(value = 0) {
+  const count = Number(value || 0)
+  if (count >= 10000) {
+    return `${(count / 10000).toFixed(1)}w`
+  }
+  return String(count)
+}
+
+/**
+ * 规范化关联商品卡片字段。
+ *
+ * 使用场景：专题详情页「关联商品」区块渲染；字段直接沿用 `special/products`
+ * 返回结构，缺省时用本地兜底，避免后端字段缺失导致空白卡片。
+ *
+ * @param {Object} item 接口返回的单个商品。
+ * @param {number} index 列表下标，用于生成稳定 key。
+ * @returns {Object} 可直接渲染的商品卡片对象。
+ */
+function normalizeRelatedProduct(item = {}, index = 0) {
+  const id = Number(item.id || 0)
+  const price = Number(item.price || 0)
+  const realSales = Number(item.sales || 0)
+  const virtualSales = Number(item.virtual_sales || 0)
+  const displaySales = Number(
+    item.display_sales !== undefined ? item.display_sales : (realSales + virtualSales)
+  ) || 0
+  const displayTags = normalizeDisplayTags(item.tag_list, 1)
+  const firstTag = displayTags.length > 0 ? displayTags[0] : null
+
+  return {
+    id,
+    title: String(item.name || item.title || '').trim() || '商品',
+    image: String(item.cover || item.image || '').trim(),
+    priceText: String(item.price_text || '').trim() || formatPriceText(price),
+    salesText: String(item.sales_text || '').trim() || `已售${formatSalesText(displaySales)}件`,
+    detailUrl: String(item.detail_url || '').trim() || `/pages/goods/detail/index?id=${id}`,
+    firstTagText: firstTag ? firstTag.name : '',
+    firstTagStyle: firstTag ? buildInlineTagStyle(firstTag) : '',
+    renderKey: `related-product-${id || index}-${index}`
+  }
+}
+
 function collectCartIds(payload = {}) {
   const ids = []
   const cartId = Number(payload.cart_id || payload.id || 0)
@@ -326,6 +450,10 @@ const errorMessage = ref('')
 const favoriteLoading = ref(false)
 const cartLoading = ref(false)
 const buyLoading = ref(false)
+const relatedProducts = ref([])
+const relatedTotal = ref(0)
+const relatedExpanded = ref(false)
+const relatedLoadingMore = ref(false)
 
 const isLearningState = computed(() => {
   return detailState.value === 'learning'
@@ -342,10 +470,15 @@ const heroToneClass = computed(() => {
 const topicTotalPriceText = computed(() => {
   return detail.value.isFree ? '免费' : formatPriceText(detail.value.price)
 })
+// 首屏只展示固定数量，剩余商品通过「查看更多」就地展开全部。
+const relatedHasMore = computed(() => {
+  return !relatedExpanded.value && relatedTotal.value > relatedProducts.value.length
+})
 
 onLoad((options = {}) => {
   initPage(options)
   fetchDetail()
+  fetchRelatedProducts()
 })
 
 function initPage(options = {}) {
@@ -353,6 +486,10 @@ function initPage(options = {}) {
   detail.value = createEmptyDetail()
   detailState.value = 'purchase'
   isFavorite.value = false
+  relatedProducts.value = []
+  relatedTotal.value = 0
+  relatedExpanded.value = false
+  relatedLoadingMore.value = false
   errorMessage.value = specialId.value > 0 ? '' : '专题ID不能为空'
 }
 async function fetchDetail() {
@@ -384,6 +521,89 @@ async function fetchDetail() {
     errorMessage.value = '专题加载失败'
   } finally {
     loading.value = false
+  }
+}
+/**
+ * 获取专题关联商品。
+ *
+ * 使用场景：专题详情页进入时拉取首屏商品，「查看更多」时拉取全部；
+ * 接口失败或返回空列表时整个区块隐藏，不展示空状态。
+ *
+ * @param {Object} params 拉取参数。
+ * @param {number} params.page 页码。
+ * @param {number} params.limit 每页数量。
+ * @param {boolean} params.append 是否追加到现有列表。
+ */
+async function fetchRelatedProducts({ page = 1, limit = RELATED_PRODUCT_LIMIT, append = false } = {}) {
+  if (specialId.value <= 0) {
+    return
+  }
+
+  try {
+    const res = await getSpecialProducts({
+      id: specialId.value,
+      page,
+      limit
+    }, {
+      showError: false,
+      loginRedirect: false
+    })
+
+    // 关联商品属于弱依赖数据，失败时静默降级，不影响专题详情主流程。
+    if (!res || res.code !== 200 || !res.data) {
+      return
+    }
+
+    const list = Array.isArray(res.data.list) ? res.data.list : []
+    const baseIndex = append ? relatedProducts.value.length : 0
+    const normalized = list.map((item, index) => normalizeRelatedProduct(item, baseIndex + index))
+    relatedProducts.value = append ? relatedProducts.value.concat(normalized) : normalized
+    relatedTotal.value = Number(res.data.total || relatedProducts.value.length || 0)
+  } catch (error) {
+    console.error('[special-detail] fetchRelatedProducts failed', error)
+  }
+}
+/**
+ * 打开关联商品详情页。
+ *
+ * @param {Object} item 规范化后的商品卡片对象。
+ */
+function handleProductClick(item = {}) {
+  const productId = Number(item.id || 0)
+  if (productId <= 0) {
+    uni.showToast({ title: '商品暂不可访问', icon: 'none' })
+    return
+  }
+
+  const url = String(item.detailUrl || '').trim() || `/pages/goods/detail/index?id=${productId}`
+  uni.navigateTo({ url })
+}
+/**
+ * 查看更多关联商品。
+ *
+ * 商品列表页暂无「按专题筛选」入参，直接跳转会展示全量商品形成误导，
+ * 因此就地按分页补齐剩余商品，保证展示内容仍属于当前专题。
+ */
+async function handleRelatedMore() {
+  const total = Number(relatedTotal.value || 0)
+  if (total <= 0 || relatedLoadingMore.value) {
+    return
+  }
+
+  relatedLoadingMore.value = true
+  try {
+    // 剩余数量补齐一轮即可覆盖单页上限，接口 limit 最大 20。
+    const rest = total - relatedProducts.value.length
+    if (rest > 0) {
+      await fetchRelatedProducts({
+        page: 2,
+        limit: Math.min(rest, 20),
+        append: true
+      })
+    }
+    relatedExpanded.value = true
+  } finally {
+    relatedLoadingMore.value = false
   }
 }
 async function reportPreviewRecord() {
@@ -969,6 +1189,191 @@ function handleContentClick(item = {}) {
     background: #a1a1aa;
     transform: translateX(-50%);
   }
+}
+
+.special-related {
+  padding-top: 40rpx;
+}
+
+.special-related__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.special-related__more {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 40rpx;
+  padding-left: 16rpx;
+  color: #8b8b93;
+
+  &--hover {
+    opacity: 0.7;
+  }
+}
+
+.special-related__more-text {
+  font-size: 24rpx;
+  line-height: 34rpx;
+  color: #8b8b93;
+}
+
+.special-related__more-arrow {
+  margin-left: 4rpx;
+  font-size: 20rpx;
+  line-height: 1;
+  color: #b0b0b8;
+}
+
+.special-related__list {
+  display: flex;
+  flex-wrap: wrap;
+  /* 用负边距抵消子项 padding，避免 calc(50% - 18rpx) + 左右 margin 导致总宽超出行宽、第二列被挤出屏幕 */
+  margin-left: -8rpx;
+  margin-right: -8rpx;
+}
+
+.related-card {
+  display: flex;
+  width: calc(50% - 16rpx);
+  margin: 0 8rpx 16rpx;
+  padding: 14rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+  box-sizing: border-box;
+  box-shadow: 0 4rpx 12rpx var(--shadow-soft);
+
+  &--hover {
+    opacity: 0.92;
+  }
+}
+
+.related-card__cover {
+  position: relative;
+  flex-shrink: 0;
+  width: 112rpx;
+  height: 112rpx;
+  margin-right: 10rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background: #f3f5f7;
+}
+
+.related-card__image,
+.related-card__placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.related-card__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b6bdc6;
+  font-size: 22rpx;
+}
+
+.related-card__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.related-card__title {
+  display: -webkit-box;
+  height: 68rpx;
+  font-size: 24rpx;
+  line-height: 34rpx;
+  font-weight: 600;
+  color: #1f1f1f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 商品标签颜色由后台配置，主色作为兜底，样式通过行内 style 覆盖 */
+.related-card__title-badge {
+  display: inline-block;
+  max-width: 92rpx;
+  height: 30rpx;
+  margin-right: 6rpx;
+  padding: 0 8rpx;
+  border-width: 1rpx;
+  border-style: none;
+  border-color: transparent;
+  border-radius: 6rpx;
+  box-sizing: border-box;
+  color: #ffffff;
+  background: var(--brand-primary, #ea580c);
+  font-size: 18rpx;
+  line-height: 30rpx;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.related-card__desc {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  line-height: 30rpx;
+  color: #8b8b8b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 卡片宽度只有半屏，价格独占左侧、按钮固定右下角，避免价格被压缩成省略号 */
+.related-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 4rpx;
+}
+
+.related-card__price {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin-right: 8rpx;
+  font-size: 28rpx;
+  line-height: 34rpx;
+  font-weight: 700;
+  color: var(--brand-primary, #ea580c);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.related-card__buy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 68rpx;
+  /* 高度需大于文字行高，否则中文字形上下会被裁切 */
+  height: 36rpx;
+  border-radius: 999rpx;
+  background: var(--brand-primary, #ea580c);
+  box-shadow: 0 6rpx 14rpx var(--brand-shadow, rgba(234, 88, 12, 0.18));
+
+  &--hover {
+    opacity: 0.86;
+  }
+}
+
+.related-card__buy-text {
+  font-size: 18rpx;
+  line-height: 26rpx;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
 }
 
 .special-guess {

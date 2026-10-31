@@ -1,4 +1,4 @@
-const VITE_APP_BASE_API = 'http://127.0.0.1:25780/api/merchant' || import.meta.env.VITE_APP_BASE_API || `${location.origin}/api/merchant`
+const VITE_APP_BASE_API = import.meta.env.VITE_APP_BASE_API || `${location.origin}/api/merchant`
 
 export default {
 

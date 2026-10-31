@@ -26,15 +26,15 @@
         :particle-count="36"
         :trail-span="0.28"
       />
-      <text class="guess-you-like__loading-text">内容加载中...</text>
+      <text class="guess-you-like__loading-text">{{ isProductMode ? '商品加载中...' : '专题加载中...' }}</text>
     </view>
 
-    <view v-else-if="displayProductList.length" class="product-grid">
+    <view v-else-if="displayRecommendList.length" class="product-grid">
       <view
-        v-for="item in displayProductList"
+        v-for="item in displayRecommendList"
         :key="item.id"
         class="product-card"
-        @click="handleProductClick(item)"
+        @click="handleRecommendClick(item)"
       >
         <view class="product-card__inner">
           <image class="product-image" :src="item.cover" mode="aspectFill" />
@@ -62,10 +62,12 @@
       <view class="guess-you-like__empty-icon">
         <uni-icons type="info" size="28" color="#d4d4d8"></uni-icons>
       </view>
-      <text class="guess-you-like__empty-title">暂无推荐内容</text>
-      <text class="guess-you-like__empty-desc">暂时没有匹配的专题，去专题广场看看更多内容。</text>
+      <text class="guess-you-like__empty-title">{{ isProductMode ? '暂无推荐商品' : '暂无推荐专题' }}</text>
+      <text class="guess-you-like__empty-desc">
+        {{ isProductMode ? '暂时没有匹配的商品，去商品列表看看更多商品。' : '暂时没有匹配的专题，去专题广场看看更多内容。' }}
+      </text>
       <view class="guess-you-like__empty-button" hover-class="guess-you-like__empty-button--hover" @click="handleMoreClick">
-        浏览专题
+        {{ isProductMode ? '浏览商品' : '浏览专题' }}
       </view>
     </view>
   </view>
@@ -73,6 +75,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { getProductList } from '@/api/product'
 import { getSpecialRecommendList } from '@/api/special'
 
 defineOptions({
@@ -100,6 +103,10 @@ const props = defineProps({
     type: Number,
     default: 0
   },
+  recommendType: {
+    type: String,
+    default: 'special'
+  },
   hideWhenEmpty: {
     type: Boolean,
     default: false
@@ -107,78 +114,138 @@ const props = defineProps({
 })
 
 const loading = ref(true)
-const productList = ref([])
+const recommendList = ref([])
 
-const shouldRender = computed(() => {
-  return !props.hideWhenEmpty || loading.value || displayProductList.value.length > 0
+const normalizedRecommendType = computed(() => {
+  return String(props.recommendType || '').toLowerCase() === 'product' ? 'product' : 'special'
 })
 
-const displayProductList = computed(() => {
-  return productList.value.map((item) => {
-    const price = Number(item.price || 0)
-    const originalPrice = Number(item.original_price || item.ot_price || item.market_price || item.line_price || 0)
-    const isFree = price <= 0
+const isProductMode = computed(() => normalizedRecommendType.value === 'product')
 
-    return {
-      id: Number(item.id || 0),
-      cover: String(item.cover || '').trim(),
-      title: String(item.title || '').trim(),
-      description: String(item.description || '').trim(),
-      priceText: String(item.price_text || '').trim() || (isFree ? '免费' : `¥${formatMoney(price)}`),
-      originalPriceText: !isFree && originalPrice > price ? `¥${formatMoney(originalPrice)}` : '',
-      tags: Array.isArray(item.tags)
-        ? item.tags.map((tag, tagIndex) => ({
-          key: `${Number(item.id || 0)}-${tagIndex}`,
-          text: String(tag.text || '').trim(),
-          className: `tag-${String(tag.type || 'default').trim() || 'default'}`
-        })).filter((tag) => tag.text)
-        : []
-    }
-  }).filter((item) => item.id > 0 && item.cover && item.title)
+const shouldRender = computed(() => {
+  return !props.hideWhenEmpty || loading.value || displayRecommendList.value.length > 0
+})
+
+const displayRecommendList = computed(() => {
+  return recommendList.value
+    .map((item) => normalizeRecommendItem(item))
+    .filter((item) => item.id > 0 && item.cover && item.title)
 })
 
 watch(() => props.limit, () => {
-  fetchRecommendProducts()
+  fetchRecommendations()
 })
 
 watch(() => props.excludeId, () => {
-  fetchRecommendProducts()
+  if (!isProductMode.value) {
+    fetchRecommendations()
+  }
+})
+
+watch(() => props.recommendType, () => {
+  fetchRecommendations()
 })
 
 onMounted(() => {
-  fetchRecommendProducts()
+  fetchRecommendations()
 })
 
 /**
- * 拉取猜你喜欢专题推荐数据，并维护加载状态。
+ * 拉取猜你喜欢数据，并维护加载状态。
  *
  * @returns {Promise<void>}
  */
-async function fetchRecommendProducts() {
+async function fetchRecommendations() {
   loading.value = true
-  productList.value = []
+  recommendList.value = []
 
   try {
-    const res = await getSpecialRecommendList({
-      limit: props.limit,
-      exclude_id: props.excludeId || ''
-    }, {
-      showError: false,
-      loginRedirect: false
-    })
+    const params = {
+      limit: props.limit
+    }
+    const res = isProductMode.value
+      ? await getProductList({
+        ...params,
+        sort: 'sales'
+      }, {
+        showError: false,
+        loginRedirect: false
+      })
+      : await getSpecialRecommendList({
+        ...params,
+        exclude_id: props.excludeId || ''
+      }, {
+        showError: false,
+        loginRedirect: false
+      })
 
     if (!res || res.code !== 200 || !res.data) {
-      productList.value = []
+      recommendList.value = []
       return
     }
 
-    productList.value = Array.isArray(res.data.list) ? res.data.list : []
+    recommendList.value = Array.isArray(res.data.list) ? res.data.list : []
   } catch (error) {
-    console.error('[guess-you-like] fetchRecommendProducts failed', error)
-    productList.value = []
+    console.error('[guess-you-like] fetchRecommendations failed', error)
+    recommendList.value = []
   } finally {
     loading.value = false
   }
+}
+
+/**
+ * 统一商品和专题卡片字段，避免展示层依赖两个接口的原始命名差异。
+ *
+ * @param {Object} item 商品或专题原始数据。
+ * @returns {Object} 卡片可直接渲染的数据。
+ */
+function normalizeRecommendItem(item = {}) {
+  const id = Number(item.id || item.product_id || item.special_id || 0)
+  const price = Number(item.price || 0)
+  const originalPrice = Number(item.original_price || item.ot_price || item.market_price || item.line_price || 0)
+  const hasSpecialType = item.special_type !== undefined && item.special_type !== null && item.special_type !== ''
+  // 专题推荐接口可能不返回 special_type，价格为正时应按付费兜底。
+  const isFree = price <= 0 || (
+    !isProductMode.value &&
+    hasSpecialType &&
+    Number(item.special_type) === 0
+  )
+  const originalPriceText = String(item.original_price_text || '').trim() ||
+    (!isFree && originalPrice > price ? `¥${formatMoney(originalPrice)}` : '')
+
+  return {
+    id,
+    cover: String(item.cover || item.image || '').trim(),
+    title: String(item.title || item.name || '').trim(),
+    description: String(item.description || item.subtitle || '').trim(),
+    priceText: String(item.price_text || '').trim() || (isFree ? '免费' : `¥${formatMoney(price)}`),
+    originalPriceText,
+    tags: normalizeRecommendTags(item, id)
+  }
+}
+
+/**
+ * 规范化商品/专题标签为当前卡片样式使用的字段。
+ *
+ * @param {Object} item 商品或专题原始数据。
+ * @param {number} id 资源 ID。
+ * @returns {Array<Object>} 可渲染标签列表。
+ */
+function normalizeRecommendTags(item = {}, id = 0) {
+  const source = Array.isArray(item.tags) && item.tags.length
+    ? item.tags
+    : (Array.isArray(item.tag_list) ? item.tag_list : [])
+
+  return source.map((tag, tagIndex) => {
+    const text = String(tag && (tag.text || tag.name || tag.label) || '').trim()
+    const rawType = String(tag && (tag.type || tag.tag_type) || 'default').trim().toLowerCase()
+    const type = ['hot', 'free', 'paid'].includes(rawType) ? rawType : 'default'
+    return {
+      key: `${id}-${tagIndex}`,
+      text,
+      className: `tag-${type}`
+    }
+  }).filter((tag) => tag.text)
 }
 
 /**
@@ -188,7 +255,7 @@ async function fetchRecommendProducts() {
  */
 function handleMoreClick() {
   uni.navigateTo({
-    url: '/pages/contents/special/index'
+    url: isProductMode.value ? '/pages/goods/list/index' : '/pages/contents/special/index'
   })
 }
 
@@ -211,23 +278,25 @@ function formatMoney(value) {
 }
 
 /**
- * 处理专题推荐点击事件。
+ * 处理商品或专题卡片点击事件。
  *
- * @param {Object} item 当前点击的专题对象。
+ * @param {Object} item 当前推荐对象。
  * @returns {void}
  */
-function handleProductClick(item) {
-  const specialId = Number(item.id || 0)
-  if (specialId <= 0) {
+function handleRecommendClick(item) {
+  const id = Number(item.id || 0)
+  if (id <= 0) {
     uni.showToast({
-      title: '专题信息不存在',
+      title: isProductMode.value ? '商品信息不存在' : '专题信息不存在',
       icon: 'none'
     })
     return
   }
 
   uni.navigateTo({
-    url: `/pages/contents/special/detail/index?id=${specialId}`
+    url: isProductMode.value
+      ? `/pages/goods/detail/index?id=${id}`
+      : `/pages/contents/special/detail/index?id=${id}`
   })
 }
 </script>

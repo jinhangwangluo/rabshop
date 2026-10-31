@@ -233,6 +233,13 @@ class StoreProduct extends AuthController implements ResourceControllerInterface
      */
     protected function appendParamFields(array $data): array
     {
+        // 全局 API 中间件会移除标签；商品详情需要保留编辑器提交的原始 HTML。
+        if ($this->request->has('detail', 'post')) {
+            $data['detail'] = (string) $this->request->post('detail', '', null);
+        } else {
+            unset($data['detail']);
+        }
+
         if ($this->request->has('param_attribute_id', 'post')) {
             $data['param_attribute_id'] = (int) $this->request->post('param_attribute_id/d', 0);
         }
@@ -413,7 +420,19 @@ class StoreProduct extends AuthController implements ResourceControllerInterface
             ['brand_id', 0],
             ['tag_id', 0],
             ['platform_only', 0],
+            ['merchant_id', 0],
         ]);
         return $this->success('获取成功', $this->service->options($params, 0));
+    }
+
+    /**
+     * 获取商品采集开关。
+     *
+     * 上架页独立读取该开关，不经通用配置接口，避免为此开放配置读取权限。
+     * @return Response
+     */
+    public function collectorConfig(): Response
+    {
+        return $this->success('获取成功', $this->service->collectorConfig());
     }
 }

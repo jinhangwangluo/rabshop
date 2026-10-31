@@ -9,6 +9,7 @@ import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { applyInterfaceTheme, bindSystemThemeListener } from '@/utils/interfaceTheme'
 import { useSettingsStore } from '@/store/modules/settings'
+import { pageSlotBridge } from '@/utils/pageSlots'
 
 defineOptions({
   name: 'App'
@@ -33,6 +34,7 @@ watch(interfaceSettings, (value) => {
 let unbindSystemTheme = null
 
 onMounted(() => {
+  pageSlotBridge.start()
   unbindSystemTheme = bindSystemThemeListener(() => {
     if (themeMode.value === 'system') {
       applyInterfaceTheme(interfaceSettings.value)
@@ -41,6 +43,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  pageSlotBridge.dispose()
   if (unbindSystemTheme) {
     unbindSystemTheme()
   }

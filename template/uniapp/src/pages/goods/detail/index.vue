@@ -199,7 +199,7 @@
 					</scroll-view>
 				</view>
 
-				<view class="detail-card">
+				<view class="detail-card detail-card--content">
 					<view class="detail-card__title">
 						<text class="iconfont icon-link detail-card__decoration"></text>
 						<text>商品详情</text>
@@ -781,6 +781,45 @@
 	}
 
 	/**
+	 * 为商品详情中的图片补充跨端宽度样式。
+	 *
+	 * @param {string} value 商品详情 HTML。
+	 * @returns {string} 图片按详情容器宽度展示的 HTML。
+	 * @description 微信小程序不支持通过样式表选择 rich-text 内部的 img 标签，因此将规则写入节点属性。
+	 */
+	function normalizeDetailHtml(value = '') {
+		const html = String(value || '').trim()
+		if (!html) {
+			return ''
+		}
+
+		const imageStyle = 'display:block;width:100%;max-width:100%;height:auto;margin:0;'
+		const normalizedHtml = html.replace(/<img\b([^>]*)>/gi, (tag, attrs) => {
+			const styleMatch = attrs.match(/\sstyle\s*=\s*(["'])(.*?)\1/i)
+			if (!styleMatch) {
+				const selfClosing = /\s*\/\s*$/.test(attrs)
+				const normalizedAttrs = selfClosing ? attrs.replace(/\s*\/\s*$/, '') : attrs
+				return `<img${normalizedAttrs} style="${imageStyle}"${selfClosing ? ' />' : '>'}`
+			}
+
+			const existingStyle = String(styleMatch[2] || '').trim()
+			const mergedStyle = `${existingStyle}${existingStyle && !existingStyle.endsWith(';') ? ';' : ''}${imageStyle}`
+			return tag.replace(styleMatch[0], ` style="${mergedStyle}"`)
+		})
+		const paragraphStyle = 'margin:0;padding:0;line-height:0;'
+		return normalizedHtml.replace(/<p\b([^>]*)>(\s*(?:<img\b[^>]*>\s*)+)<\/p>/gi, (tag, attrs, content) => {
+			const styleMatch = attrs.match(/\sstyle\s*=\s*(["'])(.*?)\1/i)
+			if (!styleMatch) {
+				return `<p${attrs} style="${paragraphStyle}">${content}</p>`
+			}
+
+			const existingStyle = String(styleMatch[2] || '').trim()
+			const mergedStyle = `${existingStyle}${existingStyle && !existingStyle.endsWith(';') ? ';' : ''}${paragraphStyle}`
+			return tag.replace(styleMatch[0], ` style="${mergedStyle}"`)
+		})
+	}
+
+	/**
 	 * 规范化商品详情接口返回，补齐页面展示所需字段。
 	 *
 	 * @param {Object} data 商品详情接口数据。
@@ -798,7 +837,7 @@
 			thumb: imageList[0] || String(data.cover || '').trim(),
 			images: imageList,
 			description: String(data.description || '').trim(),
-			detail: String(data.detail || '').trim(),
+			detail: normalizeDetailHtml(data.detail),
 			price: Number(data.price || 0),
 			ot_price: Number(data.ot_price || 0),
 			priceText: formatMoney(Number(data.price || 0)),
@@ -2865,10 +2904,17 @@
 
 	.detail-card__rich {
 		display: block;
-		margin-top: 20rpx;
+		margin-top: 0;
+		margin-right: -26rpx;
+		margin-bottom: 0;
+		margin-left: -26rpx;
 		color: #333333;
 		font-size: 26rpx;
 		line-height: 42rpx;
+	}
+
+	.detail-card--content {
+		padding-bottom: 0;
 	}
 
 	.detail-card__empty {

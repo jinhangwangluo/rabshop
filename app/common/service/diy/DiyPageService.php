@@ -63,11 +63,12 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
     /**
      * 获取默认个人中心配置。
      *
-     * @return array 个人中心服务菜单、订单菜单和广告默认配置。
+     * @return array 个人中心服务菜单、订单菜单、广告和推荐类型默认配置。
      */
     protected function getDefaultUserCenterConfig(): array
     {
         return [
+            'recommend_type' => 'special',
             'service_menu' => [
                 'title' => '必备服务',
                 'columns' => 4,
@@ -188,7 +189,10 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
     public function getUserCenterDecorateDetail(): array
     {
         $page = $this->getOrCreateUserCenterPage();
-        $config = $this->extractUserCenterConfig($page['components'] ?? []);
+        $config = $this->extractUserCenterConfig(
+            $page['components'] ?? [],
+            $page['global_config'] ?? []
+        );
 
         return [
             'page' => [
@@ -199,6 +203,7 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
                 'status' => (int)($page['status'] ?? 1),
                 'global_config' => is_array($page['global_config'] ?? null) ? $page['global_config'] : [],
             ],
+            'recommend_type' => $config['recommend_type'],
             'service_menu' => $config['service_menu'],
             'order_menu' => $config['order_menu'],
             'banner' => $config['banner'],
@@ -215,16 +220,19 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
     {
         $page = $this->getOrCreateUserCenterPage();
         $pageId = (int)$page['id'];
+        $recommendType = $this->normalizeUserCenterRecommendType($data['recommend_type'] ?? '');
         $serviceMenu = $this->normalizeUserServiceMenuConfig($data['service_menu'] ?? []);
         $orderMenu = $this->normalizeUserOrderMenuConfig($data['order_menu'] ?? []);
         $banner = $this->normalizeUserBannerConfig($data['banner'] ?? []);
+        $globalConfig = is_array($data['global_config'] ?? null) ? $data['global_config'] : [];
+        $globalConfig['recommend_type'] = $recommendType;
 
-        $this->transaction(function () use ($pageId, $data, $serviceMenu, $orderMenu, $banner) {
+        $this->transaction(function () use ($pageId, $data, $globalConfig, $serviceMenu, $orderMenu, $banner) {
             $this->update($pageId, [
                 'page_name' => (string)($data['page_name'] ?? '个人中心默认装修'),
                 'page_title' => (string)($data['page_title'] ?? '个人中心'),
                 'status' => (int)($data['status'] ?? 1),
-                'global_config' => is_array($data['global_config'] ?? null) ? $data['global_config'] : [],
+                'global_config' => $globalConfig,
             ]);
 
             app()->make(DiyComponentService::class)->saveAllComponents($pageId, [
@@ -261,7 +269,7 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
      * 获取移动端个人中心装修配置。
      *
      * @param int $userId 当前用户标识，匿名访问时为零。
-     * @return array 个人中心菜单、广告配置和功能状态，供客户端按开关决定展示。
+     * @return array 个人中心菜单、广告、推荐类型和功能状态，供客户端按开关决定展示。
      */
     public function getMobileUserCenterConfig(int $userId = 0): array
     {
@@ -282,6 +290,7 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
             $defaultConfig = $this->getDefaultUserCenterConfig();
             return [
                 'page' => null,
+                'recommend_type' => $defaultConfig['recommend_type'],
                 'service_menus' => $this->formatMobileUserServiceMenus($defaultConfig['service_menu']),
                 'service_menus_title' => $defaultConfig['service_menu']['title'] ?? '我的服务',
                 'order_menus' => $this->formatMobileUserOrderMenus($defaultConfig['order_menu']),
@@ -301,7 +310,10 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
         }
 
         $pageData = $page->toArray();
-        $config = $this->extractUserCenterConfig($pageData['components'] ?? []);
+        $config = $this->extractUserCenterConfig(
+            $pageData['components'] ?? [],
+            $pageData['global_config'] ?? []
+        );
 
         return [
             'page' => [
@@ -309,6 +321,7 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
                 'page_name' => (string)($pageData['page_name'] ?? ''),
                 'page_title' => (string)($pageData['page_title'] ?? ''),
             ],
+            'recommend_type' => $config['recommend_type'],
             'service_menus' => $this->formatMobileUserServiceMenus($config['service_menu']),
             'service_menus_title' => $config['service_menu']['title'] ?? '我的服务',
             'order_menus' => $this->formatMobileUserOrderMenus($config['order_menu']),
@@ -351,12 +364,16 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
      * 从组件列表提取个人中心配置。
      *
      * @param array $components 装修页面的组件及配置列表。
+     * @param array $globalConfig 装修页面的全局配置。
      * @return array 从组件中提取并补齐默认值的个人中心配置。
      */
-    protected function extractUserCenterConfig(array $components): array
+    protected function extractUserCenterConfig(array $components, array $globalConfig = []): array
     {
         $defaultConfig = $this->getDefaultUserCenterConfig();
         $config = $defaultConfig;
+        $config['recommend_type'] = $this->normalizeUserCenterRecommendType(
+            $globalConfig['recommend_type'] ?? $defaultConfig['recommend_type']
+        );
 
         foreach ($components as $component) {
             $type = (string)($component['component_type'] ?? '');
@@ -373,6 +390,18 @@ class DiyPageService extends BaseService implements ResourceServiceInterfaceTrai
         }
 
         return $config;
+    }
+
+    /**
+     * 规范化个人中心推荐展示类型。
+     *
+     * @param mixed $value 原始推荐类型配置。
+     * @return string 仅返回 product 或 special，非法值回退专题。
+     */
+    protected function normalizeUserCenterRecommendType(mixed $value): string
+    {
+        $type = strtolower(trim((string)$value));
+        return in_array($type, ['product', 'special'], true) ? $type : 'special';
     }
 
     /**

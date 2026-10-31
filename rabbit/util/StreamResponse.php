@@ -136,17 +136,34 @@ class StreamResponse extends IteratorResponse
     /**
      * 将闭包 echo 的内容转换为可被 ThinkSwoole write() 消费的迭代器。
      *
-     * @param callable $producer 流式输出闭包
-     * @return \Generator<string>
+     * Swoole 协程环境走 Fiber+ob 分片（响应由 sendIterator 逐块 write）；
+     * php-fpm 等同步 SAPI 下 ob 回调运行于 Fiber 之外，挂起必然失败，改走直出路径。
      */
     private function makeIterator(callable $producer): \Generator
     {
-        if (class_exists(\Fiber::class)) {
+        if (class_exists(\Swoole\Coroutine::class) && \Swoole\Coroutine::getCid() >= 0) {
             yield from $this->makeFiberIterator($producer);
             return;
         }
 
-        yield from $this->makeBufferedIterator($producer);
+        yield from $this->makeDirectIterator($producer);
+    }
+
+    /**
+     * FPM 同步路径：清空输出缓冲后直接执行 producer，echo 经 flush 直达客户端。
+     *
+     * @return \Generator<string>
+     */
+    private function makeDirectIterator(callable $producer): \Generator
+    {
+        // 空分片驱动 send() 先发出响应头，再清理缓冲，保证 echo 不再被缓存吞掉。
+        yield '';
+        while (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+        flush();
+
+        $producer();
     }
 
     /**

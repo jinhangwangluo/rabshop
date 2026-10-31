@@ -160,11 +160,13 @@ class DiyPage extends AuthController implements ResourceControllerInterface
      */
     public function saveUserCenter(): mixed
     {
+        $recommendType = $this->request->post('recommend_type', 'special');
         $data = [
             'page_name' => $this->request->post('page_name', '个人中心默认装修'),
             'page_title' => $this->request->post('page_title', '个人中心'),
             'status' => (int)$this->request->post('status', 1),
             'global_config' => $this->request->post('global_config', []),
+            'recommend_type' => is_scalar($recommendType) ? (string)$recommendType : 'special',
             'service_menu' => $this->request->post('service_menu', []),
             'order_menu' => $this->request->post('order_menu', []),
             'banner' => $this->request->post('banner', []),

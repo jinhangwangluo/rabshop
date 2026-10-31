@@ -71,7 +71,11 @@ class ExceptionHandle extends Handle
         ] : [];
 
         // 添加自定义异常处理机制
-        $status = $e->getCode() !== 0 ? $e->getCode() : 400;
+        // PDO 等底层异常可能返回字符串错误码（例如 HY000），不能直接作为 HTTP 状态传给 Json。
+        $exceptionCode = $e->getCode();
+        $status = is_int($exceptionCode) && $exceptionCode >= 100 && $exceptionCode <= 599
+            ? $exceptionCode
+            : 400;
         //api接口特殊返回
         if ($e instanceof ApiException && $e->getCode()) {
             return d_json()->make($status, $e->getMessage(), $error);

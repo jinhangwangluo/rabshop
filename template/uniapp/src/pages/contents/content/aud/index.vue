@@ -71,7 +71,11 @@
           </view>
 
           <view class="player-controls" :class="{ 'player-controls--locked': !isUnlocked }">
-            <view class="player-controls__side" @click="handleChangeLoopMode">
+            <view
+              class="player-controls__side"
+              :class="{ 'player-controls__side--active': isSingleLoopMode }"
+              @click="handleChangeLoopMode"
+            >
               <text class="iconfont icon-danquxunhuan"></text>
             </view>
             <view class="player-controls__skip" @click="handleSkip(-15)">
@@ -307,6 +311,8 @@ import GuessYouLike from '@/components/guess-you-like/index.vue'
 const DEFAULT_AVATAR = '/static/images/avatar_default.jpg'
 const DEFAULT_COVER = '/static/images/news.png'
 const AUDIO_CONTENT_TYPE = 5
+const LOOP_MODE_SINGLE = 1
+const LOOP_MODE_LABELS = ['顺序播放', '单曲循环', '列表循环']
 
 function formatTime(seconds = 0) {
   const safeSeconds = Math.max(Number(seconds) || 0, 0)
@@ -409,6 +415,10 @@ const isFromSpecial = computed(() => {
 
 const canOpenPlaylist = computed(() => {
   return isFromSpecial.value && specialAudioCount.value >= 2
+})
+
+const isSingleLoopMode = computed(() => {
+  return loopModeIndex.value === LOOP_MODE_SINGLE
 })
 
 const displayPlaylistItems = computed(() => {
@@ -671,14 +681,14 @@ function handleSkip(deltaSeconds) {
 }
 
 /**
- * 切换循环模式提示。
+ * 切换循环模式，并立即同步到当前播放器。
  *
  * @returns {void}
  */
 function handleChangeLoopMode() {
-  const modes = ['顺序播放', '单曲循环', '列表循环']
-  loopModeIndex.value = (loopModeIndex.value + 1) % modes.length
-  uni.showToast({ title: modes[loopModeIndex.value], icon: 'none' })
+  loopModeIndex.value = (loopModeIndex.value + 1) % LOOP_MODE_LABELS.length
+  syncAudioLoop()
+  uni.showToast({ title: LOOP_MODE_LABELS[loopModeIndex.value], icon: 'none' })
 }
 
 /**
@@ -1161,6 +1171,7 @@ function prepareAudioContext() {
   const context = uni.createInnerAudioContext()
   context.src = audioSrc.value
   context.obeyMuteSwitch = false
+  context.loop = isSingleLoopMode.value
   context.onPlay(() => {
     isPlaying.value = true
   })
@@ -1171,6 +1182,11 @@ function prepareAudioContext() {
     isPlaying.value = false
   })
   context.onEnded(() => {
+    // 单曲循环不能停在结束态。H5/部分 iOS 会忽略 loop，仍要在 ended 后重播。
+    if (isSingleLoopMode.value) {
+      replayCurrentAudio()
+      return
+    }
     isPlaying.value = false
     currentSeconds.value = 0
   })
@@ -1184,12 +1200,86 @@ function prepareAudioContext() {
   audioContext.value = context
 }
 
+let audioReplayToken = 0
+let audioReplayAt = 0
+
+/**
+ * 取消尚未执行的单曲重播，避免暂停或切歌后被延迟 play 拉起来。
+ *
+ * @returns {void}
+ */
+function cancelPendingAudioReplay() {
+  audioReplayToken += 1
+}
+
+/**
+ * 按当前模式同步原生循环开关。
+ * 只在单曲循环时打开，顺序播放和列表循环仍要收到结束事件。
+ *
+ * @returns {void}
+ */
+function syncAudioLoop() {
+  if (!isSingleLoopMode.value) {
+    cancelPendingAudioReplay()
+  }
+  if (!audioContext.value) {
+    return
+  }
+  audioContext.value.loop = isSingleLoopMode.value
+}
+
+/**
+ * 从开头重播当前音频。
+ * ended 后立刻 play 会停在末尾并再次结束，所以延迟 seek 后再播。
+ *
+ * @returns {void}
+ */
+function replayCurrentAudio() {
+  const context = audioContext.value
+  const src = String(audioSrc.value || '')
+  if (!context || !src || !isSingleLoopMode.value) {
+    isPlaying.value = false
+    currentSeconds.value = 0
+    return
+  }
+
+  const now = Date.now()
+  // seek 失败时 ended 会马上再来一次，避免把重播打成死循环。
+  if (now - audioReplayAt < 300) {
+    isPlaying.value = false
+    return
+  }
+  audioReplayAt = now
+
+  const token = audioReplayToken + 1
+  audioReplayToken = token
+  currentSeconds.value = 0
+  isPlaying.value = true
+  context.loop = true
+
+  setTimeout(() => {
+    if (token !== audioReplayToken || audioContext.value !== context || !isSingleLoopMode.value) {
+      return
+    }
+    context.seek(0)
+    const played = context.play()
+    if (played && typeof played.catch === 'function') {
+      played.catch(() => {
+        if (token === audioReplayToken) {
+          isPlaying.value = false
+        }
+      })
+    }
+  }, 60)
+}
+
 /**
  * 暂停当前音频。
  *
  * @returns {void}
  */
 function pauseAudio() {
+  cancelPendingAudioReplay()
   if (audioContext.value) {
     audioContext.value.pause()
   }
@@ -1202,6 +1292,7 @@ function pauseAudio() {
  * @returns {void}
  */
 function stopAudio() {
+  cancelPendingAudioReplay()
   if (audioContext.value) {
     audioContext.value.stop()
   }
@@ -1215,6 +1306,7 @@ function stopAudio() {
  * @returns {void}
  */
 function destroyAudioContext() {
+  cancelPendingAudioReplay()
   if (audioContext.value) {
     audioContext.value.destroy()
     audioContext.value = null
@@ -1503,6 +1595,10 @@ function destroyAudioContext() {
   width: 72rpx;
   height: 72rpx;
   color: #000000;
+}
+
+.player-controls__side--active {
+  color: var(--brand-primary, #ea580c);
 }
 
 .player-controls__side--disabled {

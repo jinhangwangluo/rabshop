@@ -1,0 +1,1 @@
+import{E as t}from"./main.CpwLkC3s.js";function r(r="",n={}){const i=String(r||"").trim();return!!i&&(function(t=""){return/^\/pages\//.test(String(t||"").trim())}(i)?(t({url:i}),!0):/^https?:\/\//i.test(i)?(window.location.href=i,!0):(t({url:i}),!0))}export{r as n};

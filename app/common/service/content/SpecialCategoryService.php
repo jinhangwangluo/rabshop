@@ -22,6 +22,7 @@ use think\db\exception\ModelNotFoundException;
  */
 class SpecialCategoryService extends CategoryService
 {
+    use \app\common\service\setting\PlatformCategoryGuard;
     /**
      * 专题分类类型
      */

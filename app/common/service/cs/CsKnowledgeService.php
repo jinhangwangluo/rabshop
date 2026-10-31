@@ -462,13 +462,16 @@ class CsKnowledgeService extends BaseService
             return [];
         }
 
-        // 批量读取知识库配置
-        $bases = app()->make(\app\common\model\cs\CsKnowledgeBase::class)
+        // 批量读取知识库配置；column() 不支持 null 字段参数，改用字段裁剪查询后按 id 重组。
+        $baseRows = app()->make(\app\common\model\cs\CsKnowledgeBase::class)
             ->whereIn('id', $baseIds)
             ->where('merchant_id', $merchantId)
             ->where('status', 1)
             ->where('delete_time', null)
-            ->column(null, 'id');
+            ->field('id, threshold, search_limit')
+            ->select()
+            ->toArray();
+        $bases = array_column($baseRows, null, 'id');
 
         if ($bases === []) {
             return [];
