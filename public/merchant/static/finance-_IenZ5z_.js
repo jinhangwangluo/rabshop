@@ -1,1 +1,0 @@
-import{Q as r}from"./index-Ue2VQeod.js";function n(){return r({url:"/finance/overview",method:"get"})}function a(e){return r({url:"/finance/records",method:"get",params:e})}function c(e){return r({url:"/finance/withdraw",method:"post",data:e})}function i(e){return r({url:"/finance/withdraw_records",method:"get",params:e})}export{a,i as b,n as g,c as s};

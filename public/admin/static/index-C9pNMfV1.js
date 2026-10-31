@@ -1,1 +1,0 @@
-import{u as r,a as c,o as n,c as u}from"./index-mNGOmRFu.js";const p={style:{display:"none"}},d={__name:"index",setup(_){const e=r(),t=c(),{params:o,query:s}=e,{path:a}=o;return t.replace({path:"/"+a,query:s}),(l,i)=>(n(),u("div",p))}};export{d as default};
