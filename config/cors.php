@@ -40,7 +40,9 @@ return [
         'Accept',
         // 插件安全网关的 JWE 请求元数据必须通过浏览器预检。
         'X-Plugin-Protocol-Version',
-        'X-Plugin-Request-Id'
+        'X-Plugin-Request-Id',
+        // 智能体访客会话标识，H5/iframe 嵌入页跨域调用时需通过预检。
+        'X-Ai-Agent-Guest'
     ],
 
     // 允许前端读取的响应头

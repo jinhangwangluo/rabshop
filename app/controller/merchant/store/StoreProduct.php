@@ -264,6 +264,13 @@ class StoreProduct extends AuthController implements ResourceControllerInterface
      */
     protected function appendParamFields(array $data): array
     {
+        // 全局 API 中间件会移除标签；商品详情需要保留编辑器提交的原始 HTML。
+        if ($this->request->has('detail', 'post')) {
+            $data['detail'] = (string) $this->request->post('detail', '', null);
+        } else {
+            unset($data['detail']);
+        }
+
         if ($this->request->has('param_attribute_id', 'post')) {
             $data['param_attribute_id'] = (int) $this->request->post('param_attribute_id/d', 0);
         }

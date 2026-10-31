@@ -138,8 +138,8 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
             throw new PluginLifecycleException('生命周期操作不支持', 'UNSUPPORTED_LIFECYCLE_OPERATION');
         }
         if ($this->developerSources !== null) {
-            $source = $this->uninstallSource($code, $installedManifest, $context);
-            if (!in_array($previousState, ['active', 'disabled'], true)) {
+            $source = $this->developerSources->resolveInstalled($code, $installedManifest);
+            if (!in_array($previousState, ['active', 'disabled', 'failed'], true)) {
                 throw new PluginLifecycleException('当前开发插件状态不允许卸载，请先核对生命周期任务与迁移账本', 'INVALID_LIFECYCLE_TRANSITION');
             }
             if ($source['root'] !== realpath($root)) {
@@ -154,6 +154,16 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
         }
         $trustedDeclaration = (new PluginInstallManifest())->read($root, $code);
         $declaration = $installedManifest['install_resources'] ?? $trustedDeclaration;
+        if ($this->developerSources !== null && !empty($context['payload']['reinstall_base_key'])) {
+            /*
+             * 重装包含后续安装，先核对全部迁移，避免卸载完成后才发现不能安装。
+             * 标记由开发重装入口生成，普通卸载不因此受未完成迁移限制。
+             */
+            $this->assertReinstallMigrationsReady($root, $code, $declaration);
+            if ($declaration !== $trustedDeclaration) {
+                $this->assertReinstallMigrationsReady($root, $code, $trustedDeclaration);
+            }
+        }
         // 受信清理要求只能拒绝保留策略，不能擅自替调用方改为删除。
         if (($trustedDeclaration['requires_operational_cleanup'] ?? false) && ($context['data_policy'] ?? 'retain') !== 'delete') {
             throw new PluginLifecycleException('此插件卸载必须选择清理运营数据；订单、支付、退款及财务等永久数据仍保留', 'PLUGIN_UNINSTALL_CLEANUP_REQUIRED');
@@ -164,7 +174,7 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
         $hook?->assertUninstallable($context);
         $this->resources->locked($code, function () use ($hook, $context, $code, $declaration, $installedManifest) {
             if ($this->developerSources !== null) {
-                $this->uninstallSource($code, $installedManifest, $context);
+                $this->developerSources->resolveInstalled($code, $installedManifest);
             }
             $hook?->assertUninstallable($context);
             if (($context['data_policy'] ?? 'retain') === 'delete') {
@@ -173,30 +183,59 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
             $this->resources->removeResources($code, $declaration);
         });
         $this->cleanupCommitted = true;
+        $unresolvedMigrations = [];
         if (($context['data_policy'] ?? 'retain') === 'delete') {
-            $this->migrate($root, $code, (string)($installed['version'] ?? ''), $declaration, 'down');
+            $unresolvedMigrations = $this->migrate($root, $code, (string)($installed['version'] ?? ''), $declaration, 'down');
         }
         $this->invalidateCaches();
-        return ['installation_id' => $context['installation_id'], 'reload_required' => true, 'frontend_rebuild_required' => true, 'retained_order_evidence' => true];
+        return [
+            'installation_id' => $context['installation_id'],
+            'reload_required' => true,
+            'frontend_rebuild_required' => true,
+            'retained_order_evidence' => true,
+            'unresolved_migrations' => $unresolvedMigrations,
+        ];
     }
 
     /**
-     * 解析卸载执行源码，重新安装时允许用当前受信源码替换已安装源码。
+     * 重装前核对全部迁移，包括后续安装仍需检查的永久迁移。
      *
-     * 替换授权只由服务器在任务载荷中写入，客户端提交的同名字段在控制器白名单外，
-     * 且当前源码仍须通过完整清单、入口与资源校验。
-     *
+     * @param string $root 已校验的开发源码目录。
      * @param string $code 插件编码。
-     * @param array<string,mixed> $installedManifest 服务器保存的已安装清单。
-     * @param array $context 包含任务载荷的执行上下文。
-     * @return array{manifest:array<string,mixed>,declaration:array<string,mixed>,source_sha256:string,root:string} 已核对卸载身份的源码验证结果。
+     * @param array $declaration 安装时保存或当前源码声明的迁移与保留规则。
+     * @return void 无返回值；迁移未完成时抛出异常。
      */
-    private function uninstallSource(string $code, array $installedManifest, array $context): array
+    private function assertReinstallMigrationsReady(string $root, string $code, array $declaration): void
     {
-        if (($context['payload']['developer_source_replacement'] ?? false) === true) {
-            return $this->developerSources->assertReinstallable($code, $installedManifest);
+        foreach ($declaration['migrations'] ?? [] as $entry) {
+            $file = (new PluginInstallManifest())->safeFile($root, $entry['file']);
+            $this->assertMigrationReady(
+                $this->resources->migration($code, basename($file)),
+                (string)hash_file('sha256', $file)
+            );
         }
-        return $this->developerSources->assertInstalled($code, $installedManifest);
+    }
+
+    /**
+     * 按安装来源核对迁移账本，开发源码可变更，未完成迁移仍需恢复。
+     *
+     * @param array|null $record 已保存的迁移账本；首次执行时为 null。
+     * @param string $checksum 当前迁移文件摘要。
+     * @return void 无返回值；账本不允许执行时抛出异常。
+     */
+    private function assertMigrationReady(?array $record, string $checksum): void
+    {
+        /*
+         * 开发来源已验证当前源码，历史摘要不能阻止卸载、安装或重装。
+         * 摘要仅在实际执行迁移时更新；跳过的已完成迁移保留原执行证据。
+         * 市场来源仍须保持已登记迁移与受信制品一致，来源由服务器依赖决定。
+         */
+        if ($record && $this->developerSources === null && !hash_equals((string)$record['checksum'], $checksum)) {
+            throw new PluginLifecycleException('已登记迁移校验和变更', 'PLUGIN_MIGRATION_CHECKSUM_MISMATCH');
+        }
+        if ($record && in_array($record['status'], ['pending', 'failed'], true)) {
+            throw new PluginLifecycleException('迁移上次未完成，须先核对账本与实际结构', 'MIGRATION_RECOVERY_REQUIRED');
+        }
     }
 
     /**
@@ -246,18 +285,19 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
     }
 
     /**
-     * 按受审顺序执行迁移并保存账本，失败或中断的迁移禁止自动重跑。
+     * 按受审顺序执行迁移并保存账本，开发卸载保留未完成迁移供下次安装核对。
      *
      * @param string $root 插件实际部署根目录。
      * @param string $code 插件编码。
      * @param string $version 迁移关联的插件版本。
      * @param array $declaration 包含迁移顺序与卸载保留策略的声明。
      * @param string $direction 安装 up 或撤销 down 方向。
-     * @return void 无返回值。
+     * @return array<array{migration:string,status:string,direction:string}> 开发卸载保留的未完成迁移摘要。
      */
-    private function migrate(string $root, string $code, string $version, array $declaration, string $direction): void
+    private function migrate(string $root, string $code, string $version, array $declaration, string $direction): array
     {
         $migrations = $declaration['migrations'] ?? [];
+        $unresolvedMigrations = [];
         usort($migrations, fn ($left, $right) => strcmp($left['file'], $right['file']));
         if ($direction === 'down') {
             $migrations = array_reverse($migrations);
@@ -270,18 +310,27 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
             $name = basename($file);
             $checksum = (string)hash_file('sha256', $file);
             $before = $this->resources->migration($code, $name);
-            if ($before && !hash_equals((string)$before['checksum'], $checksum)) {
-                throw new PluginLifecycleException('已登记迁移校验和变更', 'PLUGIN_MIGRATION_CHECKSUM_MISMATCH');
+            if ($direction === 'down' && $this->developerSources !== null
+                && in_array($before['status'] ?? '', ['pending', 'failed'], true)) {
+                /*
+                 * 未完成的 DDL 可能已经部分提交，不能猜测其结构或盲目重跑 down。
+                 * 普通卸载继续撤销其余资源，原账本保持不变，下次安装仍须核对。
+                 */
+                $unresolvedMigrations[] = [
+                    'migration' => $name,
+                    'status' => $before['status'],
+                    'direction' => (string)($before['direction'] ?? ''),
+                ];
+                continue;
             }
-            if ($before && in_array($before['status'], ['pending', 'failed'], true)) {
-                throw new PluginLifecycleException('迁移上次未完成，须先核对账本与实际结构', 'MIGRATION_RECOVERY_REQUIRED');
-            }
+            $this->assertMigrationReady($before, $checksum);
             if (($direction === 'up' && ($before['status'] ?? '') === 'applied')
                 || ($direction === 'down' && (!$before || ($before['status'] ?? '') === 'rolled_back'))) {
                 continue;
             }
             $this->resources->saveMigration($code, $name, ['plugin_version' => $version, 'checksum' => $checksum, 'direction' => $direction, 'status' => 'pending', 'error_message' => '']);
             $this->ddlTouched = true;
+            $adapter = $this->adapter();
             try {
                 require_once $file;
                 $class = $entry['class'];
@@ -291,7 +340,7 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
                     throw new PluginLifecycleException('迁移必须在受审文件显式实现 up/down', 'PLUGIN_MIGRATION_INVALID');
                 }
                 $migration = new $class('plugin', (int)substr($name, 0, 14));
-                $migration->setAdapter($this->adapter());
+                $migration->setAdapter($adapter);
                 $migration->setMigratingUp($direction === 'up');
                 $migration->$direction();
                 $this->resources->saveMigration($code, $name, ['status' => $direction === 'up' ? 'applied' : 'rolled_back', $direction === 'up' ? 'executed_at' : 'rolled_back_at' => date('Y-m-d H:i:s')]);
@@ -308,8 +357,19 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
                     0,
                     $failure
                 );
+            } finally {
+                /*
+                 * 远端 MySQL 可能在连续 DDL 间回收空闲连接；每个迁移独立连接，
+                 * 并在迁移结束后释放，避免下一条迁移复用失效 PDO。
+                 */
+                try {
+                    $adapter->disconnect();
+                } catch (Throwable) {
+                    // 迁移结果已经落账时，连接释放失败不能覆盖真实执行结果。
+                }
             }
         }
+        return $unresolvedMigrations;
     }
 
     /**
@@ -352,20 +412,41 @@ final class InstalledPluginLifecycleExecutor implements PluginLifecycleExecutorI
         }
         $parents = [];
         $parentPaths = [];
+        $installedMenus = [];
         foreach ($menus['items'] ?? [] as $item) {
             $surface = (string)($item['surface'] ?? '');
             $route = (string)($item['route'] ?? '');
             $permission = (string)($item['permission'] ?? '');
             $parentId = $item['parent_id'] ?? 0;
-            if (!in_array($surface, ['admin', 'merchant'], true) || !str_starts_with($route, '/' . $code . '/')
+            $parentRoute = (string)($item['parent_route'] ?? '');
+            // 顶级纯分组菜单允许恰好 /{code}，供侧边栏渲染可展开但不跳转的分组节点。
+            $isGroupRoute = $route === '/' . $code;
+            if (!in_array($surface, ['admin', 'merchant'], true)
+                || (!str_starts_with($route, '/' . $code . '/') && !$isGroupRoute)
                 || !str_starts_with($permission, 'plugin:' . $code . ':') || !is_int($parentId) || $parentId < 0) {
                 throw new PluginLifecycleException('菜单声明越界', 'PLUGIN_RESOURCE_INVALID');
             }
-            $parentPath = $parentId > 0 ? $this->menuParentPath($parentId, $surface) : '';
+            if ($parentRoute !== '') {
+                // 子项通过先前声明项的 route 引用本插件父级菜单；两种引用方式互斥。
+                if ($parentId !== 0 || !isset($installedMenus[$surface][$parentRoute])) {
+                    throw new PluginLifecycleException('菜单声明越界', 'PLUGIN_RESOURCE_INVALID');
+                }
+                $parentId = $installedMenus[$surface][$parentRoute]['id'];
+                $parentPath = $installedMenus[$surface][$parentRoute]['path'];
+            } else {
+                $parentPath = $parentId > 0 ? $this->menuParentPath($parentId, $surface) : '';
+            }
             $menu = $this->menuData($surface, (string)$item['title'], $route, '', 0, $permission, $parentId);
             $menu['path'] = $parentPath;
-            $parents[$surface] = $this->resources->installResource($code, 'menu', $surface . ':menu:' . $route, $menu);
-            $parentPaths[$surface] = $parentPath;
+            $menu['icon'] = mb_substr((string)($item['icon'] ?? ''), 0, 50);
+            $menu['sort'] = max(0, (int)($item['sort'] ?? 0));
+            $menuId = $this->resources->installResource($code, 'menu', $surface . ':menu:' . $route, $menu);
+            $installedMenus[$surface][$route] = ['id' => $menuId, 'path' => $parentPath];
+            if ($parentId === 0 && $parentRoute === '') {
+                // 接口权限行统一挂在顶级菜单下；声明多个顶级时取最后一个。
+                $parents[$surface] = $menuId;
+                $parentPaths[$surface] = $parentPath;
+            }
         }
         foreach ($permissions['items'] ?? [] as $item) {
             $surface = (string)($item['surface'] ?? '');

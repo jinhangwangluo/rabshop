@@ -13,11 +13,12 @@
     <div v-loading="loading" class="editor-body">
       <div class="preview-panel">
         <div class="panel-title">手机预览</div>
-        <div class="panel-desc">“我的订单”“必备服务”和“广告位”支持点击设置，其他模块为固定业务预览。</div>
+        <div class="panel-desc">“我的订单”“必备服务”“广告位”和“猜你喜欢”支持点击设置。</div>
         <UserCenterPreview
           :service-menu="serviceMenu"
           :order-menu="orderMenu"
           :banner="banner"
+          :recommend-type="recommendType"
           :selected-key="selectedKey"
           @select="handleSelect"
         />
@@ -43,9 +44,21 @@
           <div class="block-title">个人中心广告</div>
           <UserBannerEditor :config="banner" @change="handleBannerChange" />
         </div>
+        <div v-else-if="selectedKey === 'recommend'" class="settings-block">
+          <div class="block-title">猜你喜欢</div>
+          <el-form label-width="100px">
+            <el-form-item label="展示内容">
+              <el-radio-group v-model="recommendType">
+                <el-radio label="product">商品</el-radio>
+                <el-radio label="special">专题</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-form>
+          <div class="panel-desc recommend-tip">只能选择一种展示类型，保存后在移动端个人中心生效。</div>
+        </div>
         <div v-else class="empty-tip">
           <LegacyIcon name="el-icon-mouse" />
-          <p>点击左侧预览中的“我的订单”“必备服务”或“广告位”进行设置</p>
+          <p>点击左侧预览中的“我的订单”“必备服务”“广告位”或“猜你喜欢”进行设置</p>
         </div>
       </div>
     </div>
@@ -163,10 +176,20 @@ const pageForm = reactive({
 const serviceMenu = reactive(createDefaultServiceMenu())
 const orderMenu = reactive(createDefaultOrderMenu())
 const banner = reactive(createDefaultBanner())
+const recommendType = ref('special')
 const selectedTitle = computed(() => {
-  const map = { service_menu: '必备服务菜单', order_menu: '我的订单', banner: '个人中心广告' }
+  const map = {
+    service_menu: '必备服务菜单',
+    order_menu: '我的订单',
+    banner: '个人中心广告',
+    recommend: '猜你喜欢'
+  }
   return map[selectedKey.value] || '未选择'
 })
+
+function normalizeRecommendType(value) {
+  return String(value || '').toLowerCase() === 'product' ? 'product' : 'special'
+}
 
 function resetPageForm() {
   Object.assign(pageForm, {
@@ -213,6 +236,7 @@ async function loadConfig() {
     resetServiceMenu(data.service_menu || {})
     resetOrderMenu(data.order_menu || {})
     resetBanner(data.banner || {})
+    recommendType.value = normalizeRecommendType(data.recommend_type)
   } catch (error) {
     console.error(error)
     proxy.$message.error('加载个人中心装修配置失败')
@@ -255,7 +279,8 @@ function buildSavePayload() {
     ...pageForm,
     service_menu: serviceMenu,
     order_menu: buildOrderMenuPayload(orderMenu),
-    banner
+    banner,
+    recommend_type: normalizeRecommendType(recommendType.value)
   }
 }
 

@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 
 export const useTagsViewStore = defineStore('tagsView', () => {
   const visitedViews = ref([])
   const cachedViews = ref([])
+  // 刷新计数器：AppMain 用它参与页面 key，递增即触发当前页面组件重建
+  const refreshTick = ref(0)
 
   function addVisitedView(view) {
     if (visitedViews.value.some(v => v.path === view.path)) return
@@ -69,6 +71,23 @@ export const useTagsViewStore = defineStore('tagsView', () => {
     }
   }
 
+  /**
+   * 刷新当前页面视图：递增 key 重建页面组件。
+   * 先把组件名从 keep-alive include 中摘除再重建，避免旧实例被保留为停用副本；
+   * 重建完成后的下一帧恢复缓存登记，使可缓存页面在后续切换时继续生效。
+   * @param {Object} view 当前路由对象（使用其 name 与 meta.noCache）。
+   */
+  async function refreshView(view) {
+    if (view && view.name) {
+      delCachedView(view)
+      refreshTick.value += 1
+      await nextTick()
+      addCachedView(view)
+      return
+    }
+    refreshTick.value += 1
+  }
+
   function addView(view) {
     addVisitedView(view)
     addCachedView(view)
@@ -104,6 +123,8 @@ export const useTagsViewStore = defineStore('tagsView', () => {
   return {
     visitedViews,
     cachedViews,
+    refreshTick,
+    refreshView,
     addView,
     addVisitedView,
     addCachedView,

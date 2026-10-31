@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace app\common\service\store;
 
 use app\common\enum\ProductEnum;
+use app\common\enum\ConfigKeyEnum;
 use app\common\exception\AdminResponseException;
 use app\common\job\store\StoreProductImageLocalizeJob;
 use app\common\model\store\StoreProduct;
@@ -225,6 +226,85 @@ class StoreProductService extends BaseService implements ResourceServiceInterfac
             'merchant_id' => $merchantId,
             'source' => $isCollect ? 'collect' : 'create',
             'library_product_count' => count($libraryIds),
+        ]);
+
+        return $product;
+    }
+
+    /**
+     * 采集上架：复用已拆分的库商品，但按自定义规格生成店铺商品。
+     *
+     * 不走 assembleFromLibrary。采集拆分行没有规格模板绑定，走商品库组合会在编辑页
+     * 被选中，并把空规格值显示成模板里 id=0 的「L」。这里只引用库商品 ID，不回写库商品。
+     *
+     * @param int $merchantId 运营商户ID。
+     * @param array $data 店铺商品基础字段，名称和分类以调用方补全结果为准。
+     * @param array $libraries 按采集顺序排列的库商品。
+     * @return \think\model\contract\Modelable 店铺商品。
+     * @throws AdminResponseException 采集规格缺失或商品不可写时抛出。
+     */
+    public function publishCollectedLibraries(int $merchantId, array $data, array $libraries)
+    {
+        $this->assertNotHotelProductInput($data);
+        $this->assertWritablePlatformCategory($data, $merchantId, true);
+        $data = $this->applyMerchantProductAuditMode($data, $merchantId);
+
+        $libraries = array_values(array_filter($libraries, static fn($item): bool => is_array($item)));
+        if ($libraries === []) {
+            throw new AdminResponseException('采集结果未生成库商品');
+        }
+
+        $built = app()->make(ProductLibraryService::class)->buildCollectedCustomSpecConfig($libraries);
+        if ($built === null) {
+            throw new AdminResponseException('采集商品缺少规格，无法上架');
+        }
+
+        $first = $libraries[0];
+        $specType = (int) $built['custom_spec_type'];
+
+        $product = $this->transaction(function () use ($merchantId, $data, $first, $built, $specType) {
+            $product = $this->create($this->buildProductFields($first, $data, $merchantId, $specType));
+            $productId = (int) $product->id;
+
+            $skuRows = [];
+            foreach ($built['custom_skus'] as $sku) {
+                $skuRows[] = [
+                    'library_product_id' => (int) ($sku['library_product_id'] ?? 0),
+                    'uniqid' => (string) ($sku['uniqid'] ?? ''),
+                    'spec_value_ids' => '',
+                    'sku' => (string) ($sku['sku'] ?? ''),
+                    'price' => (float) ($sku['price'] ?? 0),
+                    'ot_price' => (float) ($sku['ot_price'] ?? 0),
+                    'store_price' => (float) ($sku['store_price'] ?? 0),
+                    'stock' => (int) ($sku['stock'] ?? 0),
+                    'weight' => (float) ($sku['weight'] ?? 0),
+                    'pics' => (string) ($sku['pics'] ?? ''),
+                    'sort' => (int) ($sku['sort'] ?? 0),
+                    'is_default' => (int) ($sku['is_default'] ?? 0),
+                    'status' => (int) ($sku['status'] ?? ProductEnum::SKU_STATUS_OPEN),
+                ];
+            }
+            $this->diffSkuRows($productId, $skuRows);
+            $this->saveSpecConfig($productId, [
+                'spec_mode' => 'custom',
+                'custom_spec_type' => $specType,
+                'library_product_ids' => $built['library_product_ids'],
+                'custom_specs' => $built['custom_specs'],
+                'custom_skus' => $built['custom_skus'],
+            ]);
+            $this->syncProductParamConfig($productId, $data, $merchantId, (int) ($data['category_id'] ?? $first['category_id'] ?? 0));
+            $this->syncProductSnapshot($productId);
+            $this->syncProductTags($productId, $data, $merchantId);
+
+            return $product;
+        });
+
+        $this->dispatchCollectedImageLocalize((int) ($product->id ?? 0));
+        $this->publishProductEvent('product.created', $product, [
+            'operation' => 'collect',
+            'merchant_id' => $merchantId,
+            'source' => 'collect',
+            'library_product_count' => count($built['library_product_ids']),
         ]);
 
         return $product;
@@ -500,9 +580,17 @@ class StoreProductService extends BaseService implements ResourceServiceInterfac
         }
 
         $libraryData = $this->buildCustomLibraryData($sku, $productData, $skuName);
+        $libraryData['spec_name'] = $skuName;
         $libraryService = app()->make(ProductLibraryService::class);
         $libraryId = (int) ($sku['library_product_id'] ?? 0);
         if ($libraryId > 0) {
+            $existing = $libraryService->resourceRead($libraryId, $merchantId);
+            $existingAttrs = is_array($existing['attr_values'] ?? null) ? $existing['attr_values'] : [];
+            // 店铺商品保存不能用空属性覆盖采集来源和规格快照，只更新规格名称。
+            if ($existingAttrs !== []) {
+                $libraryData['attr_values'] = $existingAttrs;
+            }
+            unset($libraryData['is_share']);
             $libraryService->resourceUpdate($libraryId, $libraryData, $merchantId);
             $library = $libraryService->resourceRead($libraryId, $merchantId);
         } else {
@@ -1428,7 +1516,10 @@ class StoreProductService extends BaseService implements ResourceServiceInterfac
             throw new AdminResponseException('商品不存在');
         }
         $data = $row->toArray();
-        $data['spec_config'] = app()->make(StoreProductSpecConfigService::class)->findByProductId((int) $id);
+        $specConfig = app()->make(StoreProductSpecConfigService::class)->findByProductId((int) $id);
+        $storeSkus = app()->make(StoreProductSkuService::class)->getSkuList((int) $id);
+        // 历史批量上架把采集拆分行当成商品库组合，读取时还原成自定义规格，避免编辑页选中商品库并把规格显示成 L。
+        $data['spec_config'] = app()->make(ProductLibraryService::class)->presentCollectedSpecConfig($specConfig, $storeSkus);
         $data['category_ids'] = app()->make(ProductCategoryRelationService::class)->getCategoryIdsByProductId((int) $id);
         $data = app()->make(TagService::class)->attachTagsToDetail($data, TagService::RELATION_TYPE_PRODUCT);
         return $data;
@@ -1628,9 +1719,10 @@ class StoreProductService extends BaseService implements ResourceServiceInterfac
      * 按 ID 批量获取店铺商品映射（购物车上下文用）
      *
      * @param array $ids 店铺商品ID列表
+     * @param array $fields 需要查询的字段，默认返回全部字段
      * @return array id => 商品
      */
-    public function getMapByIds(array $ids): array
+    public function getMapByIds(array $ids, array $fields = ['*']): array
     {
         if ($ids === []) {
             return [];
@@ -1638,6 +1730,7 @@ class StoreProductService extends BaseService implements ResourceServiceInterfac
 
         $list = $this->getModel()
             ->whereIn('id', array_values(array_unique(array_filter(array_map('intval', $ids)))))
+            ->field($fields)
             ->select()
             ->toArray();
 
@@ -1779,8 +1872,24 @@ class StoreProductService extends BaseService implements ResourceServiceInterfac
 
     /**
      * 店铺商品选项（select 组件数据源）。
+    /**
+     * 获取商品采集开关状态。
      *
-     * @param array $params 搜索参数（name/category_id/brand_id/tag_id/include_child_categories/platform_only）
+     * 上架页按该开关控制采集入口显隐；走独立接口下发而非通用配置接口，
+     * 避免子管理员仅为读取一个开关而被授予配置管理权限。
+     * @return array{enabled: int} enabled：1-开启，0-关闭
+     */
+    public function collectorConfig(): array
+    {
+        return [
+            'enabled' => (int)db_config(ConfigKeyEnum::PRODUCT_COLLECTOR_ENABLED) === 1 ? 1 : 0,
+        ];
+    }
+
+    /**
+     * 商品选项列表
+     *
+     * @param array $params 搜索参数（name/category_id/brand_id/tag_id/include_child_categories/platform_only/merchant_id）
      * @param int $merchantId 当前商户ID，0=平台
      * @return array 选项列表
      */
@@ -1797,6 +1906,9 @@ class StoreProductService extends BaseService implements ResourceServiceInterfac
         } elseif (!empty($params['platform_only'])) {
             // 指定只选平台商品时，排除商户商品（平台商品 merchant_id = 0）
             $query->where('merchant_id', 0);
+        } elseif ((int)($params['merchant_id'] ?? 0) > 0) {
+            // 平台端编辑商户内容时，只允许选择该商户自己的商品
+            $query->where('merchant_id', (int)$params['merchant_id']);
         }
         if (!empty($params['name'])) {
             $query->where('name', 'like', '%' . trim((string) $params['name']) . '%');

@@ -242,6 +242,68 @@
           >选择内容</el-button>
         </el-form-item>
 
+        <!-- 关联商品 -->
+        <div class="section-title">
+          关联商品
+          <span class="section-desc">（已选 {{ form.products.length }} 个商品）</span>
+        </div>
+
+        <el-form-item label=" " class="products-item">
+          <div class="product-association">
+            <div class="product-association-header">
+              <el-button type="primary" plain :icon="Plus" @click="openProductPicker">选择商品</el-button>
+              <el-button v-if="form.products.length" type="text" @click="clearProducts">清空</el-button>
+            </div>
+
+            <el-table
+              v-if="form.products.length"
+              :data="form.products"
+              row-key="id"
+              border
+              class="product-table"
+            >
+              <el-table-column label="封面" width="90" align="center">
+                <template #default="scope">
+                  <el-image
+                    v-if="scope.row.cover"
+                    :src="scope.row.cover"
+                    class="mini-cover"
+                    fit="cover"
+                  />
+                  <div v-else class="table-cover-placeholder">暂无</div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="name" label="商品名称" min-width="220" show-overflow-tooltip />
+              <el-table-column label="价格" width="110" align="center">
+                <template #default="scope">
+                  ¥{{ formatProductPrice(scope.row.price) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="stock" label="库存" width="90" align="center" />
+              <el-table-column label="状态" width="120" align="center">
+                <template #default="scope">
+                  <el-tag :type="getProductStatusType(scope.row)" size="mini">
+                    {{ getProductStatusText(scope.row) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="90" fixed="right" align="center">
+                <template #default="scope">
+                  <el-button type="text" :icon="Delete" class="remove-btn" @click="removeProduct(scope.$index)">移除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div v-else class="product-empty">
+              暂未关联商品，选择后会在移动端专题详情页展示
+            </div>
+
+            <div class="form-tip">
+              商品用于专题详情页导购，只展示已上架且审核通过的商品；已下架或已删除商品会保留在列表中，可手动移除。
+            </div>
+          </div>
+        </el-form-item>
+
         <!-- 提交按钮 -->
         <el-form-item>
           <el-button
@@ -419,6 +481,13 @@
         </span>
       </template>
     </el-dialog>
+
+    <ProductMultiPicker
+      v-model:visible="productPickerVisible"
+      :owner-id="form.merchant_id"
+      :selected-products="selectedAvailableProducts"
+      @confirm="handleProductConfirm"
+    />
   </div>
 </template>
 
@@ -430,6 +499,7 @@ import { ArrowLeft, Delete, Document, Picture, Plus, Search } from '@element-plu
 import { specialAdd, specialRead, specialSave, searchSpecialContent, getSpecialCategoryTree, specialCategoryQuickAdd } from '@/api/special'
 import Upload from '@/components/Upload/index'
 import TagSelector from '@/components/TagSelector/index'
+import ProductMultiPicker from '@/components/ProductMultiPicker/index'
 
 defineOptions({ name: 'SpecialCreate' })
 
@@ -476,13 +546,66 @@ const getDefaultForm = () => ({
   sort: 0,
   status: 1,
   category_id: 0,
+  merchant_id: 0,
   contents: [],
-  tag_ids: []
+  tag_ids: [],
+  products: []
 })
 
 const formLoading = ref(false)
 const submitLoading = ref(false)
 const form = reactive(getDefaultForm())
+
+const productPickerVisible = ref(false)
+
+const selectedAvailableProducts = computed(() => form.products.filter(
+  (item) => item && item.is_available !== false && !item.is_deleted
+))
+
+function openProductPicker() {
+  productPickerVisible.value = true
+}
+
+/**
+ * 合并商品选择结果。
+ *
+ * 弹窗只展示在售商品，已下架或已删除的历史关联不在弹窗内，需要保留下来由用户手动移除。
+ */
+function handleProductConfirm(products) {
+  const confirmed = Array.isArray(products) ? products : []
+  const confirmedIds = new Set(confirmed.map((item) => Number(item.id)))
+  const unavailable = form.products.filter(
+    (item) => (item.is_available === false || item.is_deleted) && !confirmedIds.has(Number(item.id))
+  )
+  form.products = [...confirmed, ...unavailable]
+}
+
+function removeProduct(index) {
+  form.products.splice(index, 1)
+}
+
+function clearProducts() {
+  form.products = []
+}
+
+function formatProductPrice(value) {
+  return Number(value || 0).toFixed(2)
+}
+
+function getProductStatusText(item) {
+  if (item.is_deleted) return '已删除'
+  if (Number(item.status) !== 1) return '已下架'
+  if (Number(item.audit_status) !== 1) return '审核未通过'
+  return '在售'
+}
+
+function getProductStatusType(item) {
+  if (item.is_deleted) return 'danger'
+  if (Number(item.status) !== 1) return 'info'
+  if (Number(item.audit_status) !== 1) return 'warning'
+  return 'success'
+}
+
 const rules = {
   title: [
     { required: true, message: '请输入专题标题', trigger: 'blur' },
@@ -617,7 +740,9 @@ function loadDetail() {
         sort: Number(data.sort) || 0,
         status: data.status !== undefined ? Number(data.status) : 1,
         category_id: Number(data.category_id) || 0,
+        merchant_id: Number(data.merchant_id) || 0,
         tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : [],
+        products: Array.isArray(data.products) ? data.products : [],
         contents: normalizeContentSort((data.contents || []).map((item, index) => ({
           article_id: item.article_id || (item.article && item.article.id),
           title: (item.article && item.article.title) || item.title || '',
@@ -654,7 +779,9 @@ function handleSubmit() {
       sort: form.sort,
       status: form.status,
       category_id: form.category_id || 0,
+      merchant_id: form.merchant_id || 0,
       tag_ids: form.tag_ids || [],
+      product_ids: form.products.map((item) => Number(item.id)).filter((id) => id > 0),
       contents: form.contents.map((item, index) => ({
         article_id: item.article_id,
         type: item.type,
@@ -900,6 +1027,36 @@ onBeforeMount(() => {
 
       :deep(.content-sort-input) {
         width: 88px;
+      }
+    }
+
+    .products-item {
+      :deep(.el-form-item__content) {
+        margin-left: 0 !important;
+      }
+    }
+
+    .product-association {
+      width: 100%;
+
+      .product-association-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .product-table {
+        margin-bottom: 12px;
+      }
+
+      .product-empty {
+        border: 1px dashed #dcdfe6;
+        border-radius: 6px;
+        padding: 30px;
+        text-align: center;
+        color: #c0c4cc;
+        margin-bottom: 12px;
       }
     }
 

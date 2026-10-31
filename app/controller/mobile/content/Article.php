@@ -123,6 +123,35 @@ class Article extends BaseController
     }
 
     /**
+     * 获取内容关联商品列表。
+     *
+     * GET 参数：
+     * - id int 内容 ID，必填。
+     * - page int 页码，默认 1。
+     * - limit int 每页数量，默认 10，最大 20。
+     *
+     * 匿名用户可访问；登录用户会返回会员价相关字段。
+     *
+     * @return Response 返回关联商品列表及分页信息。
+     */
+    public function products(): Response
+    {
+        $articleId = (int)$this->request->get('id/d', 0);
+        if ($articleId <= 0) {
+            return $this->fail('内容ID不能为空');
+        }
+
+        $params = $this->request->only(['page', 'limit']);
+        $data = $this->service->getMobileRelatedProducts(
+            $articleId,
+            (int)($this->request->user_id ?? 0),
+            is_array($params) ? $params : []
+        );
+
+        return $this->success('获取成功', $data);
+    }
+
+    /**
      * 查询内容收藏状态。
      *
      * GET 参数：

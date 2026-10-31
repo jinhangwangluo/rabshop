@@ -86,7 +86,7 @@ import {
 } from '@/utils/menuTree'
 import { isExternal } from '@/utils/validate'
 import { useAppStore } from '@/store/modules/app'
-import { useSettingsStore } from '@/store/modules/settings'
+import { useTagsViewStore } from '@/store/modules/tagsView'
 import { useUserStore } from '@/store/modules/user'
 
 defineOptions({
@@ -96,7 +96,7 @@ defineOptions({
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
-const settingsStore = useSettingsStore()
+const tagsViewStore = useTagsViewStore()
 const userStore = useUserStore()
 const { sidebar } = storeToRefs(appStore)
 const { menus, appMenus } = storeToRefs(userStore)
@@ -158,10 +158,8 @@ function isCurrentMenuTarget(resolvedRoute) {
 }
 
 function refreshCurrentView() {
-  settingsStore.changeSetting({ key: 'isShowLink', value: false })
-  setTimeout(() => {
-    settingsStore.changeSetting({ key: 'isShowLink', value: true })
-  }, 100)
+  // 通过 tagsView 刷新当前视图：重建页面组件但不做整棵布局树的分支切换
+  tagsViewStore.refreshView(route)
 }
 
 function handleMenuClick(item) {

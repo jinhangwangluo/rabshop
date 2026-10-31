@@ -152,6 +152,7 @@ import { useAiImageGenerateStore } from '@/store/modules/aiImageGenerate'
 import { useAppStore } from '@/store/modules/app'
 import { useBackendMessageStore } from '@/store/modules/backendMessage'
 import { useSettingsStore } from '@/store/modules/settings'
+import { useTagsViewStore } from '@/store/modules/tagsView'
 import { useUserStore } from '@/store/modules/user'
 
 defineOptions({
@@ -165,6 +166,7 @@ const settingsStore = useSettingsStore()
 const userStore = useUserStore()
 const backendMessageStore = useBackendMessageStore()
 const aiImageGenerateStore = useAiImageGenerateStore()
+const tagsViewStore = useTagsViewStore()
 const { sidebar, device } = storeToRefs(appStore)
 const { adminInfo, menus, appMenus } = storeToRefs(userStore)
 const { menuStyle } = storeToRefs(settingsStore)
@@ -237,13 +239,11 @@ function openAiImageGenerate() {
 
 function refresh() {
   animation.value = true
-  settingsStore.changeSetting({ key: 'isShowLink', value: false })
+  // 通过 tagsView 刷新当前视图：重建页面组件但不做整棵布局树的分支切换
+  tagsViewStore.refreshView(route)
   setTimeout(() => {
-    settingsStore.changeSetting({ key: 'isShowLink', value: true })
-    setTimeout(() => {
-      animation.value = false
-    }, 1000)
-  }, 100)
+    animation.value = false
+  }, 1000)
 }
 
 function handleRootNavPointerDown(event) {

@@ -1,0 +1,1 @@
+import{Q as t,R as e,ai as n}from"./main.CpwLkC3s.js";function a(n={},a={}){return t("comment/list",n,{authMode:e.NONE,...a})}function o(t={},a={}){return n("comment/create",t,{authMode:e.REQUIRED,...a})}function r(t={},a={}){return n("comment/reply",t,{authMode:e.REQUIRED,...a})}export{o as c,a as g,r};

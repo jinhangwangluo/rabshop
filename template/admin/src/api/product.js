@@ -61,6 +61,106 @@ export function collectProduct(data) {
 
 // ==================== 店铺商品 ====================
 
+/**
+ * 获取商品采集开关。
+ * 上架页按该开关控制采集入口显隐；走独立接口下发，不依赖通用配置读取权限。
+ * @returns {Promise<Object>} 返回 { enabled: 0|1 }，enabled=1 表示开启采集。
+ */
+export function getCollectorConfig() {
+  return request({ url: '/product/collector_config', method: 'get' })
+}
+
+/**
+ * 批量采集：上传表格（xlsx/xls/csv，首列商品链接）创建采集任务并入队。
+ * @param {FormData} formData 包含 file 字段的表单数据。
+ * @returns {Promise<Object>} 返回 { total, queued_count, duplicate_count, invalid_count, batch_no }。
+ */
+export function importBatchCollect(formData) {
+  return request({
+    url: '/product/batch_collect/import',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+/**
+ * 获取批量采集任务列表。
+ * @param {Object} params 查询参数 { page, limit, status, publish_status, batch_no, keyword }。
+ * @returns {Promise<Object>} 返回 { list, total, page, limit, totalPage }。
+ */
+export function getBatchCollectTasks(params) {
+  return request({ url: '/product/batch_collect/tasks', method: 'get', params })
+}
+
+/**
+ * 下载批量采集导入模板（xlsx）。
+ * @returns {Promise<Blob>} 模板文件流。
+ */
+export function downloadBatchCollectTemplate() {
+  return request({
+    url: '/product/batch_collect/template',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 批量上架：将选中任务的库商品组合成店铺商品（队列逐条执行）。
+ * @param {number[]} taskIds 任务ID列表。
+ * @returns {Promise<Object>} 返回 { queued_count, skipped_count, errors }。
+ */
+export function publishBatchCollect(taskIds) {
+  const data = { task_ids: taskIds }
+  return request({ url: '/product/batch_collect/publish', method: 'post', data })
+}
+
+/**
+ * 批量补全任务的库商品分类/品牌/运费模板。
+ * @param {number[]} taskIds 任务ID列表。
+ * @param {Object} data 补全数据 { category_id, brand_id, freight_template_id }。
+ * @returns {Promise<Object>} 返回 { updated, tasks }。
+ */
+export function completeBatchCollect(taskIds, data) {
+  const payload = { task_ids: taskIds, ...data }
+  return request({ url: '/product/batch_collect/complete', method: 'post', data: payload })
+}
+
+/**
+ * 重试采集失败的任务。
+ * @param {number} id 任务ID。
+ * @returns {Promise<Object>} 返回任务信息。
+ */
+export function retryBatchCollectTask(id) {
+  return request({ url: `/product/batch_collect/tasks/${id}/retry`, method: 'post' })
+}
+
+/**
+ * 批量重试全部采集失败的任务（后端延迟队列逐秒错峰执行），需管理员登录。
+ * @returns {Promise<Object>} 返回 { total, queued_count, queued_ids }。
+ */
+export function retryFailedBatchCollectTasks() {
+  return request({ url: '/product/batch_collect/retry_failed', method: 'post' })
+}
+
+/**
+ * 删除采集任务（不动已生成的库商品）。
+ * @param {number} id 任务ID。
+ * @returns {Promise<Object>} 空数据。
+ */
+export function deleteBatchCollectTask(id) {
+  return request({ url: `/product/batch_collect/tasks/${id}`, method: 'delete' })
+}
+
+/**
+ * 批量删除采集任务（上架中的任务自动跳过），需管理员登录。
+ * @param {number[]} taskIds 任务ID列表。
+ * @returns {Promise<Object>} 返回 { total, deleted_count, skipped_ids }。
+ */
+export function deleteBatchCollectTasks(taskIds) {
+  return request({ url: '/product/batch_collect/tasks/delete', method: 'post', data: { task_ids: taskIds }})
+}
+
 /** 店铺商品选项（选择器数据源；platform_only=1 时只返回平台商品） */
 export function getStoreProductOptions(params) {
   return request({ url: '/product/options', method: 'get', params })

@@ -175,7 +175,7 @@ function buildHeaders(header = {}, authMode = AUTH_MODES.OPTIONAL) {
  * @param {string} url 业务侧传入的地址。
  * @returns {string}
  */
-function buildRequestUrl(url = '') {
+export function buildRequestUrl(url = '') {
 	const requestUrl = normalizeUrl(url)
 	if (!requestUrl) {
 		return getRuntimeConfig().apiBaseUrl

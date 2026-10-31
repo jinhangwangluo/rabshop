@@ -2,10 +2,9 @@
   <section class="app-main">
     <router-view v-slot="{ Component }">
       <transition name="fade-transform" mode="out-in">
-        <keep-alive v-if="isShowLink" :include="cachedViews">
-          <component :is="Component" :key="key" />
+        <keep-alive :include="cachedViews">
+          <component :is="Component" :key="viewKey" />
         </keep-alive>
-        <component :is="Component" v-else :key="key" />
       </transition>
     </router-view>
   </section>
@@ -16,7 +15,6 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
 import { useTagsViewStore } from '@/store/modules/tagsView'
-import { useSettingsStore } from '@/store/modules/settings'
 
 defineOptions({
   name: 'AppMain'
@@ -24,10 +22,10 @@ defineOptions({
 
 const route = useRoute()
 const tagsViewStore = useTagsViewStore()
-const settingsStore = useSettingsStore()
-const { cachedViews } = storeToRefs(tagsViewStore)
-const { isShowLink } = storeToRefs(settingsStore)
-const key = computed(() => route.path)
+const { cachedViews, refreshTick } = storeToRefs(tagsViewStore)
+
+// 刷新视图时 refreshTick 递增，配合 path 生成新 key 触发当前页面重建；平时 key 稳定为 path
+const viewKey = computed(() => (refreshTick.value ? `${route.path}__refresh_${refreshTick.value}` : route.path))
 </script>
 
 <style lang="scss" scoped>

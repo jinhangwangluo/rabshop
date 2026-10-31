@@ -74,13 +74,18 @@
               </div>
             </div>
 
-            <div class="recommend-section">
-              <div class="recommend-title">猜你喜欢</div>
+            <div
+              class="recommend-section editable-card"
+              :class="{ 'is-active': selectedKey === 'recommend' }"
+              @click.stop="handleSelect('recommend')"
+            >
+              <div class="editable-tag">可配置</div>
+              <div class="recommend-title">{{ recommendType === 'product' ? '商品推荐' : '专题推荐' }}</div>
               <div class="recommend-grid">
                 <div v-for="item in 4" :key="item" class="product-card">
                   <div class="product-img" />
-                  <div class="product-name">精选知识课程</div>
-                  <div class="product-price">¥{{ item }}99</div>
+                  <div class="product-name">{{ recommendType === 'product' ? '精选商品' : '精选专题' }}</div>
+                  <div class="product-price">{{ recommendType === 'product' ? `¥${item}99` : '免费' }}</div>
                 </div>
               </div>
             </div>
@@ -123,6 +128,10 @@ const props = defineProps({
   banner: {
     type: Object,
     default: () => ({})
+  },
+  recommendType: {
+    type: String,
+    default: 'special'
   },
   selectedKey: {
     type: String,
@@ -222,6 +231,7 @@ function handleSelect(key) {
 .banner-mask strong { font-size: 18px; }
 .banner-mask span { margin-top: 6px; font-size: 12px; }
 .recommend-title { margin: 18px 0 12px; text-align: center; color: #606266; font-weight: 600; }
+.recommend-section { position: relative; }
 .recommend-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .product-card { width: calc(50% - 5px); padding: 8px; border-radius: 14px; background: #fff; }
 .product-img { height: 96px; border-radius: 12px; background: #f6e6c8; }

@@ -469,8 +469,14 @@
             <el-button type="primary" icon="el-icon-search" @click="loadPickList">查询</el-button>
           </el-form-item>
         </el-form>
-        <el-table v-loading="pickLoading" :data="pickList" row-key="id" class="pick-table"
-          @selection-change="handlePickSelection">
+        <el-table
+          ref="pickTableRef"
+          v-loading="pickLoading"
+          :data="pickList"
+          row-key="id"
+          class="pick-table"
+          @selection-change="handlePickSelection"
+        >
           <el-table-column type="selection" width="46" :selectable="row => !isAlreadySelected(row.id)" />
           <el-table-column label="封面" width="56" align="center">
             <template #default="scope">
@@ -661,7 +667,7 @@
 </template>
 
 <script setup>
-import { computed, getCurrentInstance, nextTick, onBeforeMount, reactive, ref, watch } from 'vue'
+import { computed, getCurrentInstance, nextTick, onBeforeMount, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
@@ -670,6 +676,8 @@ import Upload from '@/components/Upload/index'
 import BigFileUpload from '@/components/BigFileUpload/index'
 import TagPreview from '@/components/TagPreview/index'
 import dragIcon from '@/assets/images/drag-icon.png'
+import { validateForm, operationResult, trackPageSlotAction } from '@/utils/pageSlots'
+import { useProductPageSlots } from './pageSlots'
 import {
   getStoreProductRead,
   createStoreProduct,
@@ -689,10 +697,10 @@ import {
   getSpecOptions,
   getServiceOptions,
   getFreightOptions,
-  getAttributeTemplateByCategory
+  getAttributeTemplateByCategory,
+  getCollectorConfig
 } from '@/api/product'
 import { getTagCategoryTree, getTagOptions, createTag } from '@/api/tag'
-import { systemGetConfigApi } from '@/api/system'
 import {
   createRequestId,
   emitPluginSubmitAfter,
@@ -714,6 +722,8 @@ const typeOptions = [
 ]
 
 const route = useRoute()
+const productRouteName = route.name
+let loadedProductId = null
 const router = useRouter()
 const { proxy } = getCurrentInstance()
 const message = proxy.$message
@@ -728,10 +738,17 @@ const formRef = ref(null)
 const editor = ref(null)
 const submitLoading = ref(false)
 const skuSaving = ref(false)
+const pageLoading = ref(false)
+const pageReady = ref(false)
+const optionsReady = ref(false)
+let productLoadSequence = 0
+let paramLoadSequence = 0
+let pickLoadSequence = 0
 const editorMode = 'default'
 
 // 选品弹窗
 const pickDialogVisible = ref(false)
+const pickTableRef = ref(null)
 const pickLoading = ref(false)
 const pickList = ref([])
 const pickTotal = ref(0)
@@ -1160,7 +1177,7 @@ function handleSpecTypeChange(value) {
 
 function loadSpecTemplates() {
   specTemplateLoading.value = true
-  getSpecList({ status: 1, page: 1, limit: 200 }).then(res => {
+  return getSpecList({ status: 1, page: 1, limit: 200 }).then(res => {
     const data = res.data || {}
     specTemplates.value = Array.isArray(data) ? data : (data.list || [])
   }).catch(() => {
@@ -1171,9 +1188,9 @@ function loadSpecTemplates() {
 }
 
 function handleSpecTemplateChange(templateId) {
-  if (!templateId) return
+  if (!templateId) return { ok: true }
   const template = specTemplates.value.find(item => Number(item.id) === Number(templateId))
-  if (!template || !Array.isArray(template.specs)) return
+  if (!template || !Array.isArray(template.specs)) return { ok: false, code: 'INVALID_VALUE', message: '规格模板不可用' }
   const nextSpecs = template.specs
     .map(spec => ({
       rowKey: customRowKeySeed++,
@@ -1186,18 +1203,19 @@ function handleSpecTemplateChange(templateId) {
   if (!nextSpecs.length) {
     selectedSpecTemplateId.value = ''
     message.warning('该规格模板暂无可用规格值')
-    return
+    return { ok: false, code: 'INVALID_VALUE', message: '该规格模板暂无可用规格值' }
   }
   const skuCount = nextSpecs.reduce((total, spec) => total * spec.values.length, 1)
   if (skuCount > MAX_SPEC_COUNT) {
     selectedSpecTemplateId.value = ''
     message.warning(`该模板将生成 ${skuCount} 个 SKU，最多支持 ${MAX_SPEC_COUNT} 个`)
-    return
+    return { ok: false, code: 'INVALID_VALUE', message: '规格模板超过 SKU 数量上限' }
   }
   customSpecType.value = 1
   customSpecs.value = nextSpecs
   syncCustomSkuRows()
   message.success(`已应用规格模板「${template.name}」`)
+  return { ok: true }
 }
 
 function addCustomSpec() {
@@ -1340,27 +1358,28 @@ const specStockCards = computed(() => {
 })
 
 function loadOptions() {
-  getProductCategoryTree({ owner_id: 0 }).then(res => {
+  const category = getProductCategoryTree({ owner_id: 0 }).then(res => {
     categoryOptions.value = res.data || []
     restoreCategoryPaths()
   }).catch(() => { })
-  fetchBrandOptions()
-  fetchTagOptions()
-  fetchTagCategories()
-  getGroupOptions().then(res => { groupOptions.value = res.data || [] }).catch(() => { })
-  getServiceOptions().then(res => { serviceOptions.value = res.data || [] }).catch(() => { })
-  getFreightOptions().then(res => { freightOptions.value = res.data || [] }).catch(() => { })
-  getSpecOptions().then(res => {
+  const group = getGroupOptions().then(res => { groupOptions.value = res.data || [] }).catch(() => { })
+  const service = getServiceOptions().then(res => { serviceOptions.value = res.data || [] }).catch(() => { })
+  const freight = getFreightOptions().then(res => { freightOptions.value = res.data || [] }).catch(() => { })
+  const specs = getSpecOptions().then(res => {
     const map = {}
     const specs = res.data || []
     specs.forEach(spec => {
       const values = spec.values || []
       values.forEach(value => {
-        map[value.id] = { specId: spec.id, specName: spec.name, valueName: value.value }
+        // 模板种子和部分历史规格值 id 都是 0，用 0 做键会互相覆盖，最后一条常把全部空规格显示成「L」。
+        const valueId = Number(value.id)
+        if (!valueId) return
+        map[valueId] = { specId: spec.id, specName: spec.name, valueName: value.value }
       })
     })
     specValueMap.value = map
   }).catch(() => { })
+  return Promise.all([category, group, service, freight, specs, fetchBrandOptions(), fetchTagOptions(), fetchTagCategories()])
 }
 
 // ==================== 品牌：新增 / 刷新 ====================
@@ -1416,29 +1435,39 @@ function selectCreatedBrand(res, brandName) {
   }
 }
 
-function submitBrandNew() {
-  brandNewFormRef.value?.validate(valid => {
-    if (!valid) return
-    const brandName = brandNewForm.name.trim()
-    if (!brandName) {
-      message.warning('请输入品牌名称')
-      return
-    }
-    brandNewSaving.value = true
-    createBrand({
+async function saveBrandNew(args, context) {
+  const loadSequence = productLoadSequence
+  if (brandNewSaving.value) return { ok: false, code: 'BUSY' }
+  const validation = await validateForm(brandNewFormRef.value)
+  if (!validation.ok) return validation
+  context.assertCurrent()
+  const brandName = brandNewForm.name.trim()
+  if (!brandName) {
+    message.warning('请输入品牌名称')
+    return { ok: false, code: 'VALIDATION_FAILED', message: '请输入品牌名称' }
+  }
+  // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+  // eslint-disable-next-line require-atomic-updates
+  brandNewSaving.value = true
+  try {
+    const res = await createBrand({
       name: brandName,
       sort: 0,
       status: 1
-    }).then(res => {
-      message.success(res.message || '添加成功')
-      brandNewVisible.value = false
-      return fetchBrandOptions().then(() => {
-        selectCreatedBrand(res, brandName)
-      })
-    }).catch(() => { }).finally(() => {
-      brandNewSaving.value = false
     })
-  })
+    message.success(res.message || '添加成功')
+    if (!context.isCurrent()) return { ok: true }
+    brandNewVisible.value = false
+    await fetchBrandOptions()
+    if (loadSequence === productLoadSequence) selectCreatedBrand(res, brandName)
+    return { ok: true }
+  } catch (error) {
+    return operationResult(error)
+  } finally {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
+    brandNewSaving.value = false
+  }
 }
 
 // ==================== 商品标签：新增 / 刷新 ====================
@@ -1539,39 +1568,50 @@ function selectCreatedTag(res, tagName) {
   }
 }
 
-function submitTagNew() {
-  tagNewFormRef.value?.validate(valid => {
-    if (!valid) return
-    const tagName = tagNewForm.name.trim()
-    if (!tagNewForm.category_id) {
-      message.warning('请选择标签分组')
-      return
-    }
-    if (!tagName) {
-      message.warning('请输入标签名称')
-      return
-    }
-    tagNewSaving.value = true
-    const data = normalizeTagColorFields(Object.assign({}, tagNewForm, {
-      tag_type: PRODUCT_TAG_TYPE,
-      name: tagName
-    }))
-    createTag(data).then(res => {
-      message.success(res.message || '添加成功')
-      tagNewVisible.value = false
-      return fetchTagOptions().then(() => {
-        selectCreatedTag(res, tagName)
-      })
-    }).catch(() => { }).finally(() => {
-      tagNewSaving.value = false
-    })
-  })
+async function saveTagNew(args, context) {
+  const loadSequence = productLoadSequence
+  if (tagNewSaving.value) return { ok: false, code: 'BUSY' }
+  const validation = await validateForm(tagNewFormRef.value)
+  if (!validation.ok) return validation
+  context.assertCurrent()
+  const tagName = tagNewForm.name.trim()
+  if (!tagNewForm.category_id) {
+    message.warning('请选择标签分组')
+    return { ok: false, code: 'VALIDATION_FAILED', message: '请选择标签分组' }
+  }
+  if (!tagName) {
+    message.warning('请输入标签名称')
+    return { ok: false, code: 'VALIDATION_FAILED', message: '请输入标签名称' }
+  }
+  // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+  // eslint-disable-next-line require-atomic-updates
+  tagNewSaving.value = true
+  const data = normalizeTagColorFields(Object.assign({}, tagNewForm, {
+    tag_type: PRODUCT_TAG_TYPE,
+    name: tagName
+  }))
+  try {
+    const res = await createTag(data)
+    message.success(res.message || '添加成功')
+    if (!context.isCurrent()) return { ok: true }
+    tagNewVisible.value = false
+    await fetchTagOptions()
+    if (loadSequence === productLoadSequence) selectCreatedTag(res, tagName)
+    return { ok: true }
+  } catch (error) {
+    return operationResult(error)
+  } finally {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
+    tagNewSaving.value = false
+  }
 }
 
 function loadCollectorConfig() {
-  systemGetConfigApi(['product_collector_enabled']).then(res => {
+  // 采集开关走独立接口下发，不再经通用配置接口读取（避免为此申请配置管理权限）
+  return getCollectorConfig().then(res => {
     const config = res.data || {}
-    collectorEnabled.value = Number(config.product_collector_enabled) === 1
+    collectorEnabled.value = Number(config.enabled) === 1
   }).catch(() => {
     collectorEnabled.value = false
   })
@@ -1633,40 +1673,49 @@ function handleCategoryParentChange(path) {
   categoryNewPid.value = Array.isArray(path) && path.length ? Number(path[path.length - 1]) || 0 : 0
 }
 
-function submitCategoryNew() {
+async function saveCategoryNew(args, context) {
+  if (categoryNewSaving.value) return { ok: false, code: 'BUSY' }
   if (!categoryNewName.value.trim()) {
     message.warning('请输入分类名称')
-    return
+    return { ok: false, code: 'VALIDATION_FAILED', message: '请输入分类名称' }
   }
   categoryNewSaving.value = true
-  createProductCategory({
-    name: categoryNewName.value.trim(),
-    pid: categoryNewPid.value || 0,
-    sort: 0,
-    status: 1
-  }).then(res => {
+  try {
+    const res = await createProductCategory({
+      name: categoryNewName.value.trim(),
+      pid: categoryNewPid.value || 0,
+      sort: 0,
+      status: 1
+    })
     message.success(res.message || '添加成功')
+    if (!context.isCurrent()) return { ok: true }
     categoryNewVisible.value = false
-    refreshCategory()
-  }).catch(() => { }).finally(() => {
+    await refreshCategory()
+    return { ok: true }
+  } catch (error) {
+    return operationResult(error)
+  } finally {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
     categoryNewSaving.value = false
-  })
+  }
 }
 
 function refreshCategory() {
-  getProductCategoryTree({ owner_id: 0 }).then(res => {
+  return getProductCategoryTree({ owner_id: 0 }).then(res => {
     categoryOptions.value = res.data || []
     restoreCategoryPaths()
   }).catch(() => { })
 }
 
 // 级联多选变更后：主分类 = 首个叶子，全部叶子写入多分类
-function applyCategoryPaths() {
+async function applyCategoryPaths(context) {
   const leaves = (categoryPaths.value || []).map(path => Number(path[path.length - 1])).filter(Boolean)
   form.category_id = leaves[0] || 0
   form.category_ids = leaves
-  loadParamTemplate(form.category_id)
+  const result = await loadParamTemplate(form.category_id, [], 0, context)
   nextTick(() => formRef.value?.validateField('category_id'))
+  return result
 }
 
 function getDefaultParamRow(extra = {}) {
@@ -1713,16 +1762,19 @@ function normalizeParamTemplateRows(template = {}, snapshot = []) {
   }).filter(item => item.name)
 }
 
-async function loadParamTemplate(categoryId, snapshot = [], templateId = 0) {
+async function loadParamTemplate(categoryId, snapshot = [], templateId = 0, context) {
+  const loadSequence = ++paramLoadSequence
   if (!Number(categoryId)) {
     paramTemplate.value = null
     paramRows.value = []
-    return
+    return { ok: true }
   }
 
   paramTemplateLoading.value = true
   try {
     const res = await getAttributeTemplateByCategory(categoryId)
+    if (loadSequence !== paramLoadSequence) return { ok: false, code: 'STALE_CONTEXT' }
+    context?.assertCurrent?.()
     const data = res.data || {}
     paramTemplate.value = data && data.id ? data : null
     const rows = Array.isArray(data.params) ? data.params : []
@@ -1735,11 +1787,15 @@ async function loadParamTemplate(categoryId, snapshot = [], templateId = 0) {
     } else {
       paramRows.value = []
     }
+    return { ok: true }
   } catch (error) {
+    if (loadSequence !== paramLoadSequence) return { ok: false, code: 'STALE_CONTEXT' }
+    if (context?.isCurrent && !context.isCurrent()) return operationResult(error)
     paramTemplate.value = null
     paramRows.value = []
+    return operationResult(error)
   } finally {
-    paramTemplateLoading.value = false
+    if (loadSequence === paramLoadSequence) paramTemplateLoading.value = false
   }
 }
 
@@ -1803,46 +1859,60 @@ function openCollectDialog() {
   nextTick(() => collectFormRef.value?.clearValidate())
 }
 
-function submitCollect() {
-  collectFormRef.value?.validate(valid => {
-    if (!valid) return
+async function collectIntoProduct(args, context) {
+  if (collectLoading.value) return { ok: false, code: 'BUSY' }
+  const validation = await validateForm(collectFormRef.value)
+  if (!validation.ok) return validation
+  context.assertCurrent()
 
-    collectLoading.value = true
-    collectProduct({ url: collectForm.url.trim() }).then(res => {
-      const item = res.data || {}
-      if (!item.id || !item.name) {
-        message.error('采集结果不完整，请稍后重试')
-        return
-      }
-      if (isAlreadySelected(item.id)) {
-        message.warning('该商品已在当前选品中')
-        return
-      }
+  // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+  // eslint-disable-next-line require-atomic-updates
+  collectLoading.value = true
+  try {
+    const res = await collectProduct({ url: collectForm.url.trim() })
+    if (!context.isCurrent()) return { ok: true, applied: false }
+    const item = res.data || {}
+    if (!item.id || !item.name) {
+      message.error('采集结果不完整，请稍后重试')
+      return { ok: false, code: 'INVALID_RESULT', message: '采集结果不完整' }
+    }
+    if (isAlreadySelected(item.id)) {
+      message.warning('该商品已在当前选品中')
+      return { ok: false, code: 'VALIDATION_FAILED', message: '该商品已在当前选品中' }
+    }
 
-      applyCollectedProduct(item)
-      collectDialogVisible.value = false
-      message.success(res.message || '商品采集成功')
-      if (specEditorVisible.value) {
-        refreshSpecEditor()
-      }
-    }).catch(() => { }).finally(() => {
-      collectLoading.value = false
-    })
-  })
+    applyCollectedProduct(item)
+    collectDialogVisible.value = false
+    message.success(res.message || '商品采集成功')
+    if (specEditorVisible.value) {
+      refreshSpecEditor()
+    }
+    return { ok: true }
+  } catch (error) {
+    return operationResult(error)
+  } finally {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
+    collectLoading.value = false
+  }
 }
 
-function loadPickList() {
+function loadPickList(context) {
+  const loadSequence = ++pickLoadSequence
   pickLoading.value = true
   const params = { name: pickSearch.name, status: 1, page: pickSearch.page, limit: pickSearch.limit }
   if (pickCategoryPath.value.length) {
     params.category_id = pickCategoryPath.value[pickCategoryPath.value.length - 1]
   }
-  getProductLibraryList(params).then(res => {
+  return getProductLibraryList(params).then(res => {
+    if (loadSequence !== pickLoadSequence || !pickDialogVisible.value) return { ok: false, code: 'STALE_CONTEXT' }
+    context?.assertCurrent?.()
     const data = res.data || {}
     pickList.value = data.list || []
     pickTotal.value = data.total || 0
-  }).finally(() => {
-    pickLoading.value = false
+    return { ok: true }
+  }).catch(operationResult).finally(() => {
+    if (loadSequence === pickLoadSequence) pickLoading.value = false
   })
 }
 
@@ -1870,6 +1940,9 @@ function confirmPick() {
   if (specEditorVisible.value) {
     refreshSpecEditor()
   }
+  return toAdd.length > restCount
+    ? { ok: false, code: 'LIMIT_EXCEEDED', message: '已添加可容纳的库商品，剩余条目超过 SKU 上限' }
+    : { ok: true }
 }
 
 function removeLibraryById(id) {
@@ -1939,7 +2012,9 @@ function applyCollectedProduct(item) {
     pics: collectedSkus[0]?.pic || item.cover || '',
     sort: Number(collectedSkus[0]?.sort ?? 100),
     is_default: 1,
-    status: Number(collectedSkus[0]?.status ?? 1)
+    status: Number(collectedSkus[0]?.status ?? 1),
+    // 采集时已创建库商品，回填 id 让上架时更新复用而不是再建一条
+    library_product_id: Number(collectedSkus[0]?.library_product_id ?? item.library_product_id ?? 0)
   })]
 }
 
@@ -1965,7 +2040,9 @@ function applyCollectedMultiSku(item, collectedSkus) {
       sort: Number(sku.sort ?? (100 - index)),
       is_default: index === 0 ? 1 : 0,
       status: Number(sku.status ?? 1),
-      uniqid: sku.sku_id ? `collect_${sku.sku_id}` : ''
+      uniqid: sku.sku_id ? `collect_${sku.sku_id}` : '',
+      // 采集时已按 SKU 拆分建库商品，回填 id 让上架时更新复用而不是再建一批
+      library_product_id: Number(sku.library_product_id || 0)
     })
   })
 }
@@ -2058,16 +2135,23 @@ function removeSpecItem(card, element) {
   card.items = card.items.filter(item => item.rowKey !== element.rowKey)
 }
 
-function removeSpecCard(card) {
+async function removeSpecCard(card, context) {
   if (card.items.length) {
-    confirm(`确定要移除「${card.title}」下全部 ${card.items.length} 个库商品吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(() => {
+    try {
+      await confirm(`确定要移除「${card.title}」下全部 ${card.items.length} 个库商品吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      context?.assertCurrent()
+      // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+      // eslint-disable-next-line require-atomic-updates
       card.items = []
-    }).catch(() => { })
+    } catch (error) {
+      return operationResult(error)
+    }
   }
+  return { ok: true }
 }
 
 function removeSpecCardByDisplay(card) {
@@ -2110,7 +2194,7 @@ function handleSkuImageSelect(row) {
 function applyBatchSku() {
   if (!skuRowsForDisplay.value.length) {
     message.warning('暂无可批量修改的 SKU')
-    return
+    return { ok: false, code: 'VALIDATION_FAILED', message: '暂无可批量修改的 SKU' }
   }
   const fields = ['pics', 'price', 'ot_price', 'store_price', 'stock', 'weight', 'sort']
   const updates = fields.reduce((result, field) => {
@@ -2121,12 +2205,13 @@ function applyBatchSku() {
   }, {})
   if (!Object.keys(updates).length) {
     message.warning('请先填写需要批量修改的内容')
-    return
+    return { ok: false, code: 'VALIDATION_FAILED', message: '请先填写需要批量修改的内容' }
   }
   skuRowsForDisplay.value.forEach(row => {
     Object.assign(row, updates)
   })
   message.success(`已批量修改 ${skuRowsForDisplay.value.length} 个 SKU`)
+  return { ok: true }
 }
 
 function clearBatchSku() {
@@ -2143,17 +2228,23 @@ function handleDefaultChange(row) {
   }
 }
 
-function handleSkuStatusChange(row) {
+async function handleSkuStatusChange(row, context) {
   if (!isLibraryMode.value || !isEdit.value || !row.id) {
-    return
+    return { ok: true }
   }
-  setStoreProductSkuStatus(productId.value, row.id, row.status).then(res => {
+  const id = productId.value
+  const issuedStatus = Number(row.status)
+  try {
+    const res = await setStoreProductSkuStatus(id, row.id, row.status)
     message.success(res.message || '修改成功')
-  }).catch(() => {
-    row.status = row.status === 1 ? 0 : 1
-  }).finally(() => {
-    loadSkus()
-  })
+  } catch (error) {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
+    if ((!context || context.isCurrent()) && Number(row.status) === issuedStatus) row.status = issuedStatus === 1 ? 0 : 1
+    return operationResult(error)
+  }
+  const reloaded = await loadSkus(id, context).then(result => result !== false).catch(() => false)
+  return { ok: true, reloaded }
 }
 
 function handleDeleteSku(row) {
@@ -2169,8 +2260,10 @@ function handleDeleteSku(row) {
   }).catch(() => { })
 }
 
-function loadSkus() {
-  return getStoreProductSkuList(productId.value).then(res => {
+function loadSkus(id = productId.value, context) {
+  const loadSequence = productLoadSequence
+  return getStoreProductSkuList(id).then(res => {
+    if (id !== productId.value || loadSequence !== productLoadSequence || (context && !context.isCurrent())) return false
     skuTable.value = (res.data || []).map(item => ({ ...item }))
     const currentSkus = new Map(skuTable.value.map(item => [item.uniqid, item]))
     customSkuRows.value.forEach(row => {
@@ -2181,11 +2274,14 @@ function loadSkus() {
   })
 }
 
-function submitSku() {
+async function saveProductSkus(args, context) {
+  if (skuSaving.value || submitLoading.value) return { ok: false, code: 'BUSY' }
   if (!skuTable.value.length) {
     message.warning('暂无SKU可保存')
-    return
+    return { ok: false, code: 'VALIDATION_FAILED', message: '暂无SKU可保存' }
   }
+  context.assertCurrent()
+  const id = productId.value
   skuSaving.value = true
   const skus = skuTable.value.map(item => ({
     id: item.id,
@@ -2203,12 +2299,18 @@ function submitSku() {
     is_default: item.is_default,
     status: item.status
   }))
-  saveStoreProductSku(productId.value, { skus }).then(res => {
+  try {
+    const res = await saveStoreProductSku(id, { skus })
     message.success(res.message || '保存成功')
-    loadSkus()
-  }).catch(() => { }).finally(() => {
+    const reloaded = await loadSkus(id, context).then(result => result !== false).catch(() => false)
+    return { ok: true, reloaded }
+  } catch (error) {
+    return operationResult(error)
+  } finally {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
     skuSaving.value = false
-  })
+  }
 }
 
 // ==================== 提交 ====================
@@ -2303,17 +2405,18 @@ function buildPayload(withLibraryIds) {
   return payload
 }
 
-async function submitForm() {
+/** 校验主表单及动态参数、规格，按钮与插槽共用同一入口。 */
+async function validateProductForm() {
   const missingParam = paramRows.value.find(row => Number(row.is_required) === 1 && (!Array.isArray(row.selected_values) || row.selected_values.length === 0))
   if (missingParam) {
     message.warning(`请填写参数「${missingParam.name}」`)
     activeStep.value = 0
-    return
+    return { ok: false, code: 'VALIDATION_FAILED', message: `请填写参数「${missingParam.name}」` }
   }
   if (isLibraryMode.value && !librarySelected.value.length) {
     message.warning('请先选择商品库商品，或改用自定义规格')
     activeStep.value = 0
-    return
+    return { ok: false, code: 'VALIDATION_FAILED', message: '请选择商品库商品或使用自定义规格' }
   }
   if (!isLibraryMode.value && !customSkuRows.value.length) {
     setCustomSingleSkuName()
@@ -2322,15 +2425,25 @@ async function submitForm() {
   if (!isLibraryMode.value && !customSkuRows.value.some(item => String(item.sku || '').trim())) {
     message.warning('请至少填写一个SKU名称')
     activeStep.value = 1
-    return
+    return { ok: false, code: 'VALIDATION_FAILED', message: '请至少填写一个SKU名称' }
   }
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) {
+  const validation = await validateForm(formRef.value)
+  if (!validation.ok) {
     activeStep.value = 0
-    return
   }
+  return validation
+}
 
+async function saveProductForm(args, context) {
+  if (submitLoading.value || skuSaving.value) return { ok: false, code: 'BUSY' }
+  const id = productId.value
+  const editing = isEdit.value
+  const validation = await validateProductForm()
+  if (!validation.ok) return validation
+  context.assertCurrent()
+
+  // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+  // eslint-disable-next-line require-atomic-updates
   submitLoading.value = true
   const reselect = isEdit.value && isLibraryMode.value
     ? librarySelected.value.map(item => item.id).join(',') !== initialLibraryIds.value.join(',')
@@ -2342,47 +2455,57 @@ async function submitForm() {
     const before = await runPluginSubmitBefore('admin.product.form.submit.before', {
       request_id: requestId,
       payload,
-      is_edit: isEdit.value,
-      product_id: productId.value
+      is_edit: editing,
+      product_id: id
     })
     if (!before.allowed) {
       message.error(before.message || '插件校验失败，请稍后重试')
-      return
+      return { ok: false, code: 'PLUGIN_REJECTED', message: before.message || '插件校验失败' }
     }
 
-    const res = await (!isEdit.value
+    context.assertCurrent()
+    const res = await (!editing
       ? createStoreProduct(before.payload)
-      : updateStoreProduct(productId.value, before.payload))
+      : updateStoreProduct(id, before.payload))
     await emitPluginSubmitAfter('admin.product.form.submit.after', {
       request_id: requestId,
       payload: before.payload,
       result: {
-        product_id: Number(res?.data?.id || res?.data?.product_id || productId.value || 0)
+        product_id: Number(res?.data?.id || res?.data?.product_id || id || 0)
       }
     })
     message.success(res.message || '保存成功')
-    if (isEdit.value && reselect) {
+    if (!context.isCurrent()) return { ok: true, productId: Number(res?.data?.id || res?.data?.product_id || id || 0) }
+    if (editing && reselect) {
+      // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+      // eslint-disable-next-line require-atomic-updates
       initialLibraryIds.value = librarySelected.value.map(item => item.id)
-      await loadSkus()
+      await loadSkus().catch(() => { message.warning('商品已保存，SKU 刷新失败，请重新加载') })
       message.warning('已按新选品重新组合 SKU，请核对并保存 SKU 设置')
     } else {
-      goBack()
+      await goBack()
     }
+    return { ok: true, productId: Number(res?.data?.id || res?.data?.product_id || id || 0) }
   } catch (error) {
     if (error?.message) message.error(error.message)
+    return operationResult(error)
   } finally {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
     submitLoading.value = false
   }
 }
 
 function goBack() {
-  router.push('/product/list')
+  return router.push({ name: 'ProductList' })
 }
 
 // ==================== 初始化 ====================
 
 function initEdit() {
-  Promise.all([getStoreProductRead(productId.value), loadSkus()]).then(([detailRes]) => {
+  const loadSequence = productLoadSequence
+  return Promise.all([getStoreProductRead(productId.value), loadSkus()]).then(async([detailRes]) => {
+    if (loadSequence !== productLoadSequence) return
     const data = detailRes.data || {}
     const specConfig = data.spec_config || {}
     collectedFromExternal.value = false
@@ -2410,11 +2533,12 @@ function initEdit() {
       weight: Number(data.weight) || 0
     })
     restoreCategoryPaths()
-    loadParamTemplate(
+    await loadParamTemplate(
       form.category_id,
       Array.isArray(specConfig.param_snapshot) ? specConfig.param_snapshot : [],
       Number(specConfig.param_attribute_id) || 0
     )
+    if (loadSequence !== productLoadSequence) return
     if ((specConfig.spec_mode || '') === 'custom') {
       customSpecType.value = Number(specConfig.custom_spec_type) || 0
       customSpecs.value = Array.isArray(specConfig.custom_specs) && specConfig.custom_specs.length
@@ -2482,17 +2606,95 @@ function initEdit() {
   })
 }
 
-onBeforeMount(() => {
-  loadCollectorConfig()
-  loadOptions()
-  loadSpecTemplates()
-  if (!isEdit.value) {
-    handleStartCustomMode()
-  }
-  if (isEdit.value) {
-    initEdit()
-  }
+const submitForm = trackPageSlotAction('save', saveProductForm)
+const submitSku = trackPageSlotAction('sku.save', saveProductSkus)
+const submitBrandNew = trackPageSlotAction('save', saveBrandNew)
+const submitTagNew = trackPageSlotAction('save', saveTagNew)
+const submitCategoryNew = trackPageSlotAction('save', saveCategoryNew)
+const submitCollect = trackPageSlotAction('collect', collectIntoProduct)
+
+useProductPageSlots({
+  form, formRef, pageLoading, pageReady, optionsReady, productId, isEdit, submitLoading, skuSaving,
+  activeStep, visibleSteps, isLibraryMode, currentSpecType, hasBatchSkuRow, nameTouched,
+  categoryPaths, categoryOptions, brandOptions, tagOptions, groupOptions, serviceOptions, freightOptions,
+  paramRows, paramTemplateLoading, applyCategoryPaths,
+  librarySelected, collectedFromExternal, syncLibrarySkuRows, applyFirstLibrary, clearLibraryProducts,
+  customSpecType, customSpecs, selectedSpecTemplateId, specTemplates, handleSpecTypeChange, handleSpecTemplateChange,
+  syncCustomSkuRows, handleCustomSpecValueBlur, addCustomSpec, removeCustomSpec, removeCustomSpecValue,
+  skuRowsForDisplay, skuSpecColumns, batchSku, applyBatchSku, clearBatchSku, handleDefaultChange, handleSkuStatusChange,
+  validateProductForm, submitForm, submitSku, goBack,
+  pickDialogVisible, pickTableRef, pickLoading, pickList, pickSearch, pickCategoryPath, pickTempSelected,
+  openPickDialog, loadPickList, confirmPick, isAlreadySelected,
+  brandNewVisible, brandNewForm, brandNewFormRef, brandNewSaving, openBrandNew, submitBrandNew,
+  tagNewVisible, tagNewForm, tagNewFormRef, tagNewSaving, tagCategoryLoading, flatTagCategories, openTagNew, submitTagNew,
+  categoryNewVisible, categoryNewName, categoryNewPath, categoryNewSaving, categoryParentOptions,
+  openCategoryNew, handleCategoryParentChange, submitCategoryNew,
+  collectDialogVisible, collectForm, collectFormRef, collectLoading, collectorEnabled, openCollectDialog, submitCollect,
+  specEditorVisible, specEditorCards, handleOpenSpecStockEditor, refreshSpecEditor, confirmSpecEditor, removeSpecItem, removeSpecCard
 })
+
+onBeforeMount(() => {
+  Promise.all([loadCollectorConfig(), loadOptions(), loadSpecTemplates()]).then(() => {
+    optionsReady.value = true
+  })
+})
+
+onBeforeUnmount(() => {
+  // 编辑器持有 DOM 观察器，离开页面时释放，避免旧观察器访问已销毁的节点。
+  editor.value?.destroy()
+})
+
+watch(pickDialogVisible, visible => {
+  if (!visible) {
+    // 关闭后重开不能接收上一次查询的列表和加载状态。
+    ++pickLoadSequence
+    pickLoading.value = false
+  }
+}, { flush: 'sync' })
+
+watch(() => [route.name, productId.value], async() => {
+  if (route.name !== productRouteName) {
+    ++productLoadSequence
+    ++paramLoadSequence
+    paramTemplateLoading.value = false
+    ;[pickDialogVisible, brandNewVisible, tagNewVisible, categoryNewVisible, collectDialogVisible, specEditorVisible].forEach(dialog => { dialog.value = false })
+    if (pageLoading.value) {
+      pageLoading.value = false
+      pageReady.value = false
+    }
+    return
+  }
+  if (loadedProductId === productId.value && pageReady.value) return
+  const loadSequence = ++productLoadSequence
+  ++paramLoadSequence
+  pageLoading.value = true
+  pageReady.value = false
+  Object.assign(form, getDefaultForm())
+  categoryPaths.value = []
+  librarySelected.value = []
+  skuTable.value = []
+  paramRows.value = []
+  paramTemplate.value = null
+  paramTemplateLoading.value = false
+  initialLibraryIds.value = []
+  activeStep.value = 0
+  ;[pickDialogVisible, brandNewVisible, tagNewVisible, categoryNewVisible, collectDialogVisible, specEditorVisible].forEach(dialog => { dialog.value = false })
+  handleStartCustomMode()
+  try {
+    if (isEdit.value) await initEdit()
+    if (loadSequence === productLoadSequence) {
+      // 仅当前加载代次可以提交身份和就绪状态，旧请求不能覆盖新页面。
+      // eslint-disable-next-line require-atomic-updates
+      loadedProductId = productId.value
+      // eslint-disable-next-line require-atomic-updates
+      pageReady.value = true
+    }
+  } catch (error) {
+    if (loadSequence === productLoadSequence) message.error(error.message || '商品加载失败')
+  } finally {
+    if (loadSequence === productLoadSequence) pageLoading.value = false
+  }
+}, { immediate: true, flush: 'sync' })
 </script>
 
 <style lang="scss" scoped>

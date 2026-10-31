@@ -34,6 +34,9 @@ const SOURCE_ENV = __DIR__ . '/../../../.env';
 const OUTPUT_FILE = __DIR__ . '/upgrade.sql';
 const ROWS_PER_STATEMENT = 100;
 
+require_once __DIR__ . '/../../../app/common/service/live/LiveCategoryMigrationPlan.php';
+require_once __DIR__ . '/../../../app/common/service/live/LiveCategorySeedSql.php';
+
 /* ------------------------------------------------------------------ 配置：保留范围 */
 
 // 保留一个商户（其从属数据：后台账号、角色、分类、优惠券、运费模板等）
@@ -254,7 +257,12 @@ foreach (array_unique($referencedCategoryIds) as $categoryId) {
     }
 }
 usort($categoryRows, static fn (array $left, array $right): int => (int)$left['id'] <=> (int)$right['id']);
-addRows('category', $categoryRows);
+$categoryRows = (new \app\common\service\live\LiveCategoryMigrationPlan())->seedRows($categoryRows);
+$liveCategoryRows = array_values(array_filter($categoryRows, static fn(array $row): bool => (int)$row['type'] === 11));
+addRows('category', array_values(array_filter($categoryRows, static fn(array $row): bool => (int)$row['type'] !== 11)));
+$liveSql = (new \app\common\service\live\LiveCategorySeedSql())->build($liveCategoryRows, $prefix);
+if ($liveSql !== '') $statements[] = $liveSql;
+$summary[fullTable('category')] += count($liveCategoryRows);
 
 /* 配置：全表保留，敏感/环境相关值清空 */
 $blankKeys = array_flip($blankConfigKeys);
@@ -335,7 +343,6 @@ addRows('store_product_spec_config', tableRows($prefix . 'store_product_spec_con
 addRows('product_category_relation', tableRows($prefix . 'product_category_relation', "store_product_id IN ({$storeProductIdList})"));
 addRows('product_spec', tableRows($prefix . 'product_spec'));
 addRows('product_spec_item', tableRows($prefix . 'product_spec_item'));
-addRows('product_spec_value', tableRows($prefix . 'product_spec_value'));
 addRows('product_attribute', tableRows($prefix . 'product_attribute'));
 addRows('product_attribute_value', tableRows($prefix . 'product_attribute_value'));
 addRows('product_attribute_category_relation', tableRows($prefix . 'product_attribute_category_relation'));

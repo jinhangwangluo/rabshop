@@ -82,7 +82,7 @@
       <div v-show="!isTrendEmpty" ref="trendChartRef" class="dashboard-chart" />
     </section>
 
-    <section class="dashboard-ranking-grid">
+    <section v-if="rankingSections.length" class="dashboard-ranking-grid">
       <ranking-list
         v-for="item in rankingSections"
         :key="item.key"
@@ -147,6 +147,7 @@ import echarts from 'echarts'
 import { getPlatformDashboardOverview, getPlatformDashboardPending } from '@/api/dashboard'
 import MetricCard from './components/MetricCard.vue'
 import RankingList from './components/RankingList.vue'
+import { getVisibleRankingSections } from './ranking'
 
 defineOptions({
   name: 'Index'
@@ -191,12 +192,12 @@ const dateRangeText = computed(() => {
   return `${range.start_date} 至 ${range.end_date}`
 })
 
-const rankingSections = computed(() => (rankings.value || []).map(item => ({
+const rankingSections = computed(() => getVisibleRankingSections(rankings.value).map(item => ({
   ...item,
-  extraLabel: item.key === 'merchant' ? '订单数' : '点赞数',
-  valueLabel: item.key === 'merchant' ? '交易额' : '浏览量',
-  nameLabel: item.key === 'merchant' ? '商户名称' : '内容名称',
-  actionText: item.key === 'merchant' ? '查看商户' : '查看内容'
+  extraLabel: item.key === 'merchant' ? '订单数' : item.key === 'product' ? '浏览量' : '点赞数',
+  valueLabel: item.key === 'merchant' ? '交易额' : item.key === 'product' ? '销量' : '浏览量',
+  nameLabel: item.key === 'merchant' ? '商户名称' : item.key === 'product' ? '商品名称' : '内容名称',
+  actionText: item.key === 'merchant' ? '查看商户' : item.key === 'product' ? '查看商品' : '查看内容'
 })))
 
 const pendingCards = computed(() => {
@@ -248,7 +249,8 @@ async function fetchDashboard() {
 }
 
 async function fetchPending() {
-  if (pendingLoading.value) return
+  const isPendingLoading = pendingLoading.value
+  if (isPendingLoading) return
   pendingLoading.value = true
   try {
     const res = await getPlatformDashboardPending()
@@ -260,6 +262,8 @@ async function fetchPending() {
       pending.value = []
     }
   } finally {
+    // The request guard above prevents overlapping calls; clear loading after this request settles.
+    // eslint-disable-next-line require-atomic-updates
     pendingLoading.value = false
   }
 }
@@ -311,6 +315,7 @@ function handleMetricCardClick(card) {
 function getRankingActionRoute(section) {
   const routeMap = {
     merchant: { name: 'MerchantList' },
+    product: { name: 'ProductList' },
     content: { name: 'ArticleList' }
   }
   return routeMap[section.key] || null
@@ -321,6 +326,11 @@ function getRankingRowRoute(section, row) {
     return row && row.name
       ? { name: 'MerchantList', query: { mer_name: row.name }}
       : { name: 'MerchantList' }
+  }
+  if (section.key === 'product') {
+    return row && row.name
+      ? { name: 'ProductList', query: { name: row.name }}
+      : { name: 'ProductList' }
   }
   if (section.key === 'content') {
     return row && row.name
@@ -613,7 +623,7 @@ onBeforeUnmount(() => {
 
 .dashboard-ranking-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -752,7 +762,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 992px) {
   .dashboard-ranking-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .dashboard-section__header,
@@ -774,7 +784,8 @@ onBeforeUnmount(() => {
   }
 
   .dashboard-metrics__grid,
-  .dashboard-alert-grid {
+  .dashboard-alert-grid,
+  .dashboard-ranking-grid {
     grid-template-columns: 1fr;
   }
 

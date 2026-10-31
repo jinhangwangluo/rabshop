@@ -44,7 +44,7 @@ class LiveRoom extends Base
      */
     public function category()
     {
-        return $this->belongsTo(Category::class, 'category_id');
+        return $this->belongsTo(Category::class, 'category_id')->where('type', \app\common\service\setting\CategoryService::LIVE_TYPE);
     }
 
     /**

@@ -117,7 +117,7 @@
             <span class="spec-stock-type__hint">商品库仅支持单规格</span>
           </el-form-item>
           <el-form-item label="规格名称">
-            <el-input v-model="form.spec_name" placeholder="请输入规格名称，例如 默认" maxlength="30" show-word-limit class="form-width" @input="handleSpecNameInput" />
+            <el-input v-model="form.spec_name" placeholder="请输入规格名称，例如 默认" maxlength="100" show-word-limit class="form-width" @input="handleSpecNameInput" />
             <div class="form-tip">规格名称会作为单规格 SKU 标识，并用于后续上架回填</div>
           </el-form-item>
           <el-form-item label="商品属性">
@@ -942,21 +942,51 @@ onBeforeMount(initPage)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-}
+  width: 42px;
+  height: 42px;
 
-.sku-image-picker__button,
-.sku-image-picker__preview {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-}
+  &__preview,
+  &__button {
+    width: 40px;
+    height: 40px;
+    border-radius: 3px;
+  }
 
-.sku-image-picker__remove {
-  position: absolute;
-  right: -6px;
-  top: -6px;
+  &__preview {
+    border: 1px solid #ebeef5;
+  }
+
+  &__button {
+    padding: 0;
+    border-style: dashed;
+    color: #606266;
+    font-size: 18px;
+  }
+
+  &__remove {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 1px solid #dcdfe6;
+    border-radius: 50%;
+    background: #fff;
+    color: #606266;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #f56c6c;
+      color: #f56c6c;
+    }
+  }
 }
 
 .editor-wrap {

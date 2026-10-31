@@ -709,6 +709,20 @@ Route::group('api/admin', function () {
             Route::post('collect', 'admin.store.StoreProduct/collect');
             Route::post('assemble', 'admin.store.StoreProduct/assemble');
             Route::get('options', 'admin.store.StoreProduct/options');
+            // 采集开关（上架页独立读取，不经通用配置接口，避免为此开放配置读取权限）
+            Route::get('collector_config', 'admin.store.StoreProduct/collectorConfig');
+            // 批量采集（静态组必须写在 :id 动态路由之前）
+            Route::group('batch_collect', function () {
+                Route::get('template', 'admin.store.ProductCollect/template');
+                Route::post('import', 'admin.store.ProductCollect/import');
+                Route::get('tasks', 'admin.store.ProductCollect/tasks');
+                Route::post('publish', 'admin.store.ProductCollect/publish');
+                Route::post('complete', 'admin.store.ProductCollect/complete');
+                Route::post('retry_failed', 'admin.store.ProductCollect/retryFailed');
+                Route::post('tasks/delete', 'admin.store.ProductCollect/deleteBatch');
+                Route::post('tasks/:id/retry', 'admin.store.ProductCollect/retry')->pattern(['id' => '\\d+']);
+                Route::delete('tasks/:id', 'admin.store.ProductCollect/delete')->pattern(['id' => '\\d+']);
+            });
             Route::get(':id/sku_list', 'admin.store.StoreProduct/skuList')->pattern(['id' => '\\d+']);
             Route::post(':id/sku', 'admin.store.StoreProduct/saveSku')->pattern(['id' => '\\d+']);
             Route::post(':id/sku/delete/:skuId', 'admin.store.StoreProduct/deleteSku')->pattern(['id' => '\\d+', 'skuId' => '\\d+']);

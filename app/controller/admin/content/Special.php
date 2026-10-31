@@ -95,6 +95,7 @@ class Special extends AuthController implements ResourceControllerInterface
             // contents为 null 表示不修改内容列表
             ['contents', null],
             ['tag_ids', null],
+            ['product_ids', null],
         ];
     }
 

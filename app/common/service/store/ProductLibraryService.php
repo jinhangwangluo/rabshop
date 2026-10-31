@@ -139,8 +139,12 @@ class ProductLibraryService extends BaseService implements ResourceServiceInterf
     /**
      * 采集第三方商品并写入平台商品库。
      *
+     * 多 SKU 源商品按 SKU 拆分为多条单规格库商品：店铺商品 SKU 与库商品是 1:1 引用，
+     * 上架表单会按 SKU 回填 library_product_id 复用本次创建的行；若只建一条聚合行，
+     * 上架时仍会按 SKU 另建一批，聚合行必成孤儿（表现为 14 SKU 采集后库里有 15 条）。
+     *
      * @param string $sourceUrl 第三方商品链接或商品 ID。
-     * @return array<string,mixed> 新建商品库商品。
+     * @return array<string,mixed> 表单回填数据；collected_skus 每条附带 library_product_id。
      * @throws AdminResponseException 采集失败或商品信息不完整时抛出。
      */
     public function collectFromExternal(string $sourceUrl): array
@@ -158,10 +162,119 @@ class ProductLibraryService extends BaseService implements ResourceServiceInterf
             throw new AdminResponseException($exception->getMessage(), 0, $exception);
         }
 
+        $collectedSkus = $this->extractCollectedSkus($item);
+        if (count($collectedSkus) > 1) {
+            return $this->collectFromExternalSplitSkus($item, $collectedSkus, $sourceUrl, $platform);
+        }
+
         $product = $this->resourceSave($this->buildCollectedProductData($item, $sourceUrl, $platform), 0);
         $data = $this->resourceRead((int) $product->id, 0);
         $data['is_collect'] = 1;
         $data['collect_url'] = $sourceUrl;
+        // 单 SKU：把库商品 id 回传给表单，上架时 resourceUpdate 复用该行而不是再建一条
+        if (isset($data['collected_skus'][0]) && is_array($data['collected_skus'][0])) {
+            $data['collected_skus'][0]['library_product_id'] = (int) $product->id;
+        }
+        $data['library_product_id'] = (int) $product->id;
+
+        return $data;
+    }
+
+    /**
+     * 多 SKU 采集：按 SKU 拆分写入多条单规格库商品。
+     *
+     * @param array $item 第三方商品详情。
+     * @param array $collectedSkus 归一化后的 SKU 列表（extractCollectedSkus 结果）。
+     * @param string $sourceUrl 第三方商品链接。
+     * @param string $platform 来源平台标识。
+     * @return array 表单回填数据，collected_skus 每条附带 library_product_id。
+     */
+    protected function collectFromExternalSplitSkus(
+        array $item,
+        array $collectedSkus,
+        string $sourceUrl,
+        string $platform
+    ): array {
+        // 复用聚合构建逻辑计算标题/图片/详情/价格兜底等公共字段
+        $base = $this->buildCollectedProductData($item, $sourceUrl, $platform);
+        $collectedSpecs = $this->extractCollectedSpecs($item);
+
+        $libraryIds = [];
+        $this->transaction(function () use ($base, $collectedSkus, &$libraryIds): void {
+            foreach ($collectedSkus as $sku) {
+                $created = $this->resourceSave($this->buildCollectedSkuProductData($base, $sku), 0);
+                $libraryIds[] = (int) $created->id;
+            }
+        });
+
+        // 回传给表单：每条 SKU 携带对应库商品 id，上架时按 id 更新复用
+        $skusWithIds = [];
+        foreach ($collectedSkus as $index => $sku) {
+            $skusWithIds[] = $sku + ['library_product_id' => $libraryIds[$index]];
+        }
+
+        return [
+            'id' => $libraryIds[0],
+            'name' => $base['name'],
+            'keyword' => $base['keyword'],
+            'cover' => $base['cover'],
+            'pics' => $base['pics'],
+            'video' => $base['video'],
+            'description' => $base['description'],
+            'detail' => $base['detail'],
+            'price' => $base['price'],
+            'ot_price' => $base['ot_price'],
+            'store_price' => 0,
+            'stock' => $base['stock'],
+            'collected_specs' => $collectedSpecs,
+            'collected_skus' => $skusWithIds,
+            'is_collect' => 1,
+            'collect_url' => $sourceUrl,
+        ];
+    }
+
+    /**
+     * 构建单条 SKU 拆分库商品数据。
+     *
+     * 命名与上架同步（StoreProductService::buildCustomLibraryData）一致：
+     * 商品名 + 空格 + SKU 名，避免上架复用时改名。
+     *
+     * @param array $base buildCollectedProductData 计算出的公共字段。
+     * @param array $sku 单条 SKU（extractCollectedSkus 结果）。
+     * @return array 库商品写入数据。
+     */
+    protected function buildCollectedSkuProductData(array $base, array $sku): array
+    {
+        $name = trim($base['name'] . ' ' . $sku['sku']);
+        $price = (float) $sku['price'] > 0 ? (float) $sku['price'] : (float) $base['price'];
+        $cover = (string) ($sku['pic'] ?? '');
+        if ($cover === '') {
+            $cover = (string) $base['cover'];
+        }
+
+        $data = $base;
+        $data['name'] = mb_substr($name, 0, 100);
+        $data['keyword'] = mb_substr($name, 0, 255);
+        $data['price'] = $price;
+        $data['ot_price'] = (float) $base['ot_price'] > 0 ? (float) $base['ot_price'] : $price;
+        $data['stock'] = max(0, (int) $sku['stock']);
+        $data['cover'] = $cover;
+        // 拆分行的 attr 只保留本 SKU 的 collected_skus，避免每行冗余全量 SKU
+        $data['attr_values'] = array_values(array_filter(
+            $base['attr_values'],
+            static fn(array $attr): bool => $attr['name'] !== 'collected_skus'
+        ));
+        $data['attr_values'][] = ['name' => 'collected_skus', 'value' => [$sku]];
+        // 拆分行是单规格库商品，规格名称要用采集到的尺码/颜色，不能落成「默认」。
+        $specName = $this->resolveCollectedSpecName($sku);
+        if ($specName === '') {
+            $specName = trim((string) ($sku['sku'] ?? ''));
+        }
+        if ($specName === '') {
+            $specName = '默认';
+        }
+        $data['spec_name'] = $specName;
+        $data['attr_values'] = $this->setAttrValue($data['attr_values'], 'spec_name', $specName);
 
         return $data;
     }
@@ -366,8 +479,15 @@ class ProductLibraryService extends BaseService implements ResourceServiceInterf
             $stock = array_sum(array_map(static fn(array $sku): int => (int) ($sku['stock'] ?? 0), $collectedSkus));
         }
 
+        $specName = '默认';
+        if (count($collectedSkus) === 1) {
+            $resolvedSpecName = $this->resolveCollectedSpecName($collectedSkus[0]);
+            if ($resolvedSpecName !== '') {
+                $specName = $resolvedSpecName;
+            }
+        }
         $attributes = [
-            ['name' => 'spec_name', 'value' => '默认'],
+            ['name' => 'spec_name', 'value' => $specName],
             ['name' => 'source_platform', 'value' => $platform],
             ['name' => 'source_num_iid', 'value' => (string) ($item['num_iid'] ?? '')],
         ];
@@ -704,7 +824,7 @@ class ProductLibraryService extends BaseService implements ResourceServiceInterf
     {
         $attrValues = $this->normalizeAttrValues($item['attr_values'] ?? []);
         $item['attr_values'] = $attrValues;
-        $item['spec_name'] = $this->extractSpecName($attrValues);
+        $item['spec_name'] = $this->presentCollectedSpecName($attrValues);
         $item['collected_specs'] = $this->extractAttrValue($attrValues, 'collected_specs', []);
         $item['collected_skus'] = $this->extractAttrValue($attrValues, 'collected_skus', []);
         return $item;
@@ -746,6 +866,399 @@ class ProductLibraryService extends BaseService implements ResourceServiceInterf
         }
 
         return $default;
+    }
+
+    /**
+     * 把采集拆分出的库商品还原成自定义规格。
+     *
+     * 批量上架不能再走商品库组合：拆分行没有规格模板值，编辑页会把空的
+     * spec_value_id 当成 0，再被规格选项里 id=0 的最后一个值（常见是「尺寸 / L」）覆盖。
+     * 采集到的尺码、颜色应作为自定义规格回填，商品库选择框保持为空。
+     *
+     * @param array $libraries 按上架顺序排列的库商品。
+     * @param array $storeSkus 已有店铺 SKU，用于回填价格和库存；新建上架可为空。
+     * @return array<string,mixed>|null 无可还原的采集规格时返回 null。
+     */
+    public function buildCollectedCustomSpecConfig(array $libraries, array $storeSkus = []): ?array
+    {
+        $libraries = array_values(array_filter($libraries, static fn($item): bool => is_array($item)));
+        if ($libraries === []) {
+            return null;
+        }
+
+        $normalized = [];
+        foreach ($libraries as $library) {
+            $normalized[] = $this->normalizeLibraryItem($library);
+        }
+
+        $specCards = $this->collectSpecCards($normalized);
+        if ($specCards === null) {
+            return null;
+        }
+
+        $storeSkuMap = $this->indexStoreSkus($storeSkus);
+        $customSpecs = $this->assignCollectedSpecKeys($specCards);
+        $customSkus = [];
+        $libraryIds = [];
+        foreach ($normalized as $index => $library) {
+            $libraryId = (int) ($library['id'] ?? 0);
+            $productCode = (string) ($library['product_code'] ?? '');
+            $storeSku = $storeSkuMap['library'][$libraryId] ?? ($storeSkuMap['uniqid'][$productCode] ?? []);
+            $collectedSku = $this->firstCollectedSku($library);
+            $specValues = array_values(array_filter(array_map(
+                static fn($value): string => trim((string) $value),
+                is_array($collectedSku['spec_values'] ?? null) ? $collectedSku['spec_values'] : []
+            )));
+            $skuText = $this->collectedSkuLabel($library, $specValues);
+            $uniqid = trim((string) ($storeSku['uniqid'] ?? ''));
+            if ($uniqid === '') {
+                $uniqid = $productCode;
+            }
+            if ($uniqid === '') {
+                $uniqid = 'collect_' . ($libraryId > 0 ? $libraryId : ($index + 1));
+            }
+
+            $libraryIds[] = $libraryId;
+            $customSkus[] = [
+                'rowKey' => 'sku-' . ($index + 1),
+                'key' => $this->matchCollectedSpecKey($customSpecs, $specValues, $skuText),
+                'library_product_id' => $libraryId,
+                'uniqid' => $uniqid,
+                'sku' => $skuText,
+                'price' => (float) ($storeSku['price'] ?? ($collectedSku['price'] ?? ($library['price'] ?? 0))),
+                'ot_price' => (float) ($storeSku['ot_price'] ?? ($library['ot_price'] ?? 0)),
+                'store_price' => (float) ($storeSku['store_price'] ?? ($library['store_price'] ?? 0)),
+                'stock' => (int) ($storeSku['stock'] ?? ($collectedSku['stock'] ?? ($library['stock'] ?? 0))),
+                'weight' => (float) ($storeSku['weight'] ?? 0),
+                'pics' => (string) ($storeSku['pics'] ?? ($collectedSku['pic'] ?? ($library['cover'] ?? ''))),
+                'sort' => (int) ($storeSku['sort'] ?? ($collectedSku['sort'] ?? (100 - $index))),
+                'is_default' => $index === 0 ? 1 : (int) ($storeSku['is_default'] ?? 0),
+                'status' => (int) ($storeSku['status'] ?? ProductEnum::SKU_STATUS_OPEN),
+            ];
+        }
+        if ($customSkus === []) {
+            return null;
+        }
+
+        $defaultIndex = 0;
+        foreach ($customSkus as $index => $sku) {
+            if ((int) ($sku['is_default'] ?? 0) === 1) {
+                $defaultIndex = $index;
+                break;
+            }
+        }
+        foreach ($customSkus as $index => &$sku) {
+            $sku['is_default'] = $index === $defaultIndex ? 1 : 0;
+        }
+        unset($sku);
+
+        return [
+            'spec_mode' => 'custom',
+            'custom_spec_type' => count($customSkus) > 1 ? ProductEnum::SPEC_TYPE_MULTI : ProductEnum::SPEC_TYPE_SINGLE,
+            'library_product_ids' => array_values(array_filter($libraryIds)),
+            'custom_specs' => $customSpecs,
+            'custom_skus' => $customSkus,
+        ];
+    }
+
+    /**
+     * 编辑和前台读取时，把已按商品库组合上架的采集商品改回自定义规格展示。
+     *
+     * 只改返回结构，不回写数据库。没有采集规格的普通商品库组合保持原样。
+     *
+     * @param array $config 已保存的规格配置。
+     * @param array $storeSkus 店铺 SKU，用于保留已编辑的价格和库存。
+     * @return array 可直接回填的规格配置。
+     */
+    public function presentCollectedSpecConfig(array $config, array $storeSkus = []): array
+    {
+        if (($config['spec_mode'] ?? '') === 'custom' && !empty($config['custom_specs'])) {
+            return $config;
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map(
+            'intval',
+            is_array($config['library_product_ids'] ?? null) ? $config['library_product_ids'] : []
+        ))));
+        if ($ids === []) {
+            return $config;
+        }
+
+        $libraryMap = $this->getAvailableMapByIds($ids, 0);
+        $libraries = [];
+        foreach ($ids as $id) {
+            if (isset($libraryMap[$id])) {
+                $libraries[] = $libraryMap[$id];
+            }
+        }
+        $built = $this->buildCollectedCustomSpecConfig($libraries, $storeSkus);
+        if ($built === null) {
+            return $config;
+        }
+
+        return array_merge($config, $built);
+    }
+
+    /**
+     * 从采集库商品提取规格维度；没有采集快照时返回 null。
+     *
+     * @param array $libraries 已规范化的库商品。
+     * @return array<int,array{name:string,values:string[]}>|null
+     */
+    protected function collectSpecCards(array $libraries): ?array
+    {
+        $hasCollected = false;
+        $specCards = [];
+        foreach ($libraries as $library) {
+            $specs = is_array($library['collected_specs'] ?? null) ? $library['collected_specs'] : [];
+            $skus = is_array($library['collected_skus'] ?? null) ? $library['collected_skus'] : [];
+            if ($specs !== [] || $skus !== []) {
+                $hasCollected = true;
+            }
+            if ($specCards === [] && $specs !== []) {
+                foreach ($specs as $spec) {
+                    if (!is_array($spec)) {
+                        continue;
+                    }
+                    $name = trim((string) ($spec['name'] ?? ''));
+                    $values = [];
+                    foreach (is_array($spec['values'] ?? null) ? $spec['values'] : [] as $value) {
+                        $text = trim((string) $value);
+                        if ($text !== '' && !in_array($text, $values, true)) {
+                            $values[] = $text;
+                        }
+                    }
+                    if ($name !== '' && $values !== []) {
+                        $specCards[] = ['name' => $name, 'values' => $values];
+                    }
+                }
+            }
+        }
+        if (!$hasCollected) {
+            return null;
+        }
+
+        foreach ($libraries as $library) {
+            $specValues = $this->firstCollectedSku($library)['spec_values'] ?? [];
+            if (!is_array($specValues)) {
+                continue;
+            }
+            foreach ($specValues as $index => $raw) {
+                $text = trim((string) $raw);
+                if ($text === '' || $this->specCardsContain($specCards, $text)) {
+                    continue;
+                }
+                if (!isset($specCards[$index])) {
+                    $specCards[$index] = ['name' => '规格', 'values' => []];
+                }
+                $specCards[$index]['values'][] = $text;
+            }
+        }
+        if ($specCards === []) {
+            $values = [];
+            foreach ($libraries as $library) {
+                $label = $this->collectedSkuLabel($library, []);
+                if ($label !== '' && !in_array($label, $values, true)) {
+                    $values[] = $label;
+                }
+            }
+            if ($values === []) {
+                return null;
+            }
+            $specCards = [['name' => '规格', 'values' => $values]];
+        }
+
+        return array_values($specCards);
+    }
+
+    /**
+     * 给采集规格维度和规格值分配稳定 rowKey。
+     *
+     * @param array $specCards 规格维度。
+     * @return array<int,array<string,mixed>>
+     */
+    protected function assignCollectedSpecKeys(array $specCards): array
+    {
+        $specs = [];
+        foreach (array_values($specCards) as $specIndex => $card) {
+            $values = [];
+            foreach (array_values($card['values'] ?? []) as $valueIndex => $value) {
+                $values[] = [
+                    'rowKey' => 'c' . $specIndex . 'v' . $valueIndex,
+                    'value' => (string) $value,
+                ];
+            }
+            $specs[] = [
+                'rowKey' => 'c' . $specIndex,
+                'name' => (string) ($card['name'] ?? '规格'),
+                'values' => $values,
+            ];
+        }
+
+        return $specs;
+    }
+
+    /**
+     * 按规格值文本匹配维度，避免下标错位时全部落到第一个值。
+     *
+     * @param array $customSpecs 已分配 rowKey 的规格维度。
+     * @param string[] $specValues SKU 规格值。
+     * @param string $skuText SKU 展示文本，单维度兜底用。
+     * @return string 以 || 连接的规格值 rowKey。
+     */
+    protected function matchCollectedSpecKey(array $customSpecs, array $specValues, string $skuText): string
+    {
+        $keys = [];
+        $used = [];
+        foreach ($customSpecs as $card) {
+            $matched = '';
+            foreach (is_array($card['values'] ?? null) ? $card['values'] : [] as $value) {
+                $rowKey = (string) ($value['rowKey'] ?? '');
+                $text = (string) ($value['value'] ?? '');
+                if ($rowKey === '' || isset($used[$rowKey])) {
+                    continue;
+                }
+                if (in_array($text, $specValues, true) || ($specValues === [] && $text === $skuText)) {
+                    $matched = $rowKey;
+                    $used[$rowKey] = true;
+                    break;
+                }
+            }
+            if ($matched !== '') {
+                $keys[] = $matched;
+            }
+        }
+
+        return implode('||', $keys);
+    }
+
+    /**
+     * 读取拆分行上的单条采集 SKU。
+     *
+     * @param array $library 库商品。
+     * @return array<string,mixed>
+     */
+    protected function firstCollectedSku(array $library): array
+    {
+        $skus = is_array($library['collected_skus'] ?? null) ? $library['collected_skus'] : [];
+        $sku = $skus[0] ?? [];
+
+        return is_array($sku) ? $sku : [];
+    }
+
+    /**
+     * 采集 SKU 的展示文本，优先用规格值而不是带标题的库商品名。
+     *
+     * @param array $library 库商品。
+     * @param string[] $specValues 已解析的规格值。
+     * @return string
+     */
+    protected function collectedSkuLabel(array $library, array $specValues): string
+    {
+        if ($specValues !== []) {
+            return implode(' / ', $specValues);
+        }
+        $sku = trim((string) ($this->firstCollectedSku($library)['sku'] ?? ''));
+        if ($sku !== '') {
+            return $sku;
+        }
+
+        return trim((string) ($library['name'] ?? ''));
+    }
+
+    /**
+     * 判断规格值是否已经出现在某个维度中。
+     *
+     * @param array $specCards 规格维度。
+     * @param string $text 规格值。
+     * @return bool
+     */
+    protected function specCardsContain(array $specCards, string $text): bool
+    {
+        foreach ($specCards as $card) {
+            if (in_array($text, $card['values'] ?? [], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 用库商品 ID 和唯一值索引店铺 SKU。
+     *
+     * @param array $storeSkus 店铺 SKU。
+     * @return array{library:array<int,array>,uniqid:array<string,array>}
+     */
+    protected function indexStoreSkus(array $storeSkus): array
+    {
+        $byLibrary = [];
+        $byUniqid = [];
+        foreach ($storeSkus as $sku) {
+            if (!is_array($sku)) {
+                continue;
+            }
+            $libraryId = (int) ($sku['library_product_id'] ?? 0);
+            if ($libraryId > 0 && !isset($byLibrary[$libraryId])) {
+                $byLibrary[$libraryId] = $sku;
+            }
+            $uniqid = trim((string) ($sku['uniqid'] ?? ''));
+            if ($uniqid !== '' && !isset($byUniqid[$uniqid])) {
+                $byUniqid[$uniqid] = $sku;
+            }
+        }
+
+        return ['library' => $byLibrary, 'uniqid' => $byUniqid];
+    }
+
+    /**
+     * 采集 SKU 的规格名称。
+     *
+     * 优先用规格值，避免库商品编辑页把采集规格显示成「默认」。
+     *
+     * @param array $sku 采集 SKU。
+     * @return string 空字符串表示没有可展示的规格名。
+     */
+    protected function resolveCollectedSpecName(array $sku): string
+    {
+        $values = [];
+        foreach (is_array($sku['spec_values'] ?? null) ? $sku['spec_values'] : [] as $value) {
+            $text = trim((string) $value);
+            if ($text !== '') {
+                $values[] = $text;
+            }
+        }
+        $name = $values !== [] ? implode(',', $values) : trim((string) ($sku['sku'] ?? ''));
+        if ($name === '' || $name === '默认') {
+            return '';
+        }
+
+        return mb_substr($name, 0, 100);
+    }
+
+    /**
+     * 读取时还原采集规格名。
+     *
+     * 历史采集把 spec_name 写成了「默认」或空字符串，编辑页会因此显示默认。
+     * 这里只改返回值，真正落库发生在下次保存。
+     *
+     * @param array $attrValues 属性数组。
+     * @return string
+     */
+    protected function presentCollectedSpecName(array $attrValues): string
+    {
+        $specName = $this->extractSpecName($attrValues);
+        if ($specName !== '' && $specName !== '默认') {
+            return $specName;
+        }
+        $collected = $this->extractAttrValue($attrValues, 'collected_skus', []);
+        $sku = is_array($collected) ? ($collected[0] ?? []) : [];
+        if (!is_array($sku)) {
+            return $specName;
+        }
+        $resolved = $this->resolveCollectedSpecName($sku);
+
+        return $resolved !== '' ? $resolved : $specName;
     }
 
     /**

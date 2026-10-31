@@ -18,6 +18,7 @@ use app\common\service\content\SpecialService;
 use app\common\service\finance\FinanceService;
 use app\common\service\merchant\MerchantService;
 use app\common\service\order\OrderService;
+use app\common\service\store\StoreProductService;
 use app\common\service\user\UserService;
 use DateInterval;
 use DateTime;
@@ -201,9 +202,17 @@ class AdminDashboardService extends BaseService
             ->limit(5)
             ->select()
             ->toArray();
+        $productList = app()->make(StoreProductService::class)->getModel()
+            ->whereNull('delete_time')
+            ->field('id, name, sales as value, view_count as extra')
+            ->order('sales', 'desc')
+            ->limit(5)
+            ->select()
+            ->toArray();
 
         return [
             ['key' => 'merchant', 'title' => '商户销售排行', 'unit' => '元', 'list' => $merchantList],
+            ['key' => 'product', 'title' => '商品销售排行', 'unit' => '件', 'list' => $productList],
             ['key' => 'content', 'title' => '内容热度排行', 'unit' => '浏览', 'list' => $contentList],
         ];
     }

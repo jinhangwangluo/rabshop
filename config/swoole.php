@@ -62,12 +62,19 @@ return [
             env('QUEUE_NAME', 'manage') => [
 
             ],
+            // 商品批量采集/上架专用队列（ProductBatchCollectJob::QUEUE_NAME），
+            // 单条任务含外部采集调用，消费超时放宽到 300 秒，避免被默认 60 秒截断后重复消费
+            \app\common\job\store\ProductBatchCollectJob::QUEUE_NAME => [
+                'worker_num' => 1,
+                'timeout'    => 300,
+            ],
         ],
     ],
     'hot_update' => [
         'enable'  => env('APP_DEBUG', false),
         'name'    => ['*.php'],
-        'include' => [app_path(), root_path() . 'rabbit'],
+        // plugins 为插件开发目录，改动需触发热重载，否则常驻进程持续执行旧代码。
+        'include' => [app_path(), root_path() . 'rabbit', root_path() . 'plugins'],
         'exclude' => [],
     ],
     //连接池

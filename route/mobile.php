@@ -123,9 +123,11 @@ Route::group('api/mobile', function () {
         Route::get('special/favorite/status', 'mobile.content.Special/favoriteStatus');
         Route::post('special/preview/record', 'mobile.content.Special/recordPreview');
         Route::get('special/audio/list', 'mobile.content.Special/audioList');
+        Route::get('special/products', 'mobile.content.Special/products');
         Route::get('special/detail', 'mobile.content.Special/detail');
         // 内容详情与收藏状态
         Route::get('content/favorite/status', 'mobile.content.Article/favoriteStatus');
+        Route::get('content/products', 'mobile.content.Article/products');
         Route::get('content/detail', 'mobile.content.Article/detail');
     })->middleware(OptionalAuthMobileMiddleware::class);
 

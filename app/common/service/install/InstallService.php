@@ -552,8 +552,8 @@ class InstallService extends BaseService
      * 规范化管理员参数。
      *
      * @param array $admin 管理员账号、密码及确认密码的原始输入。
-     * @param bool $withAdmin 是否要求校验管理员账号及确认密码，并在未输入密码时生成密码。
-     * @return array 校验标志、失败原因及管理员账号和原输入或新生成的密码。
+     * @param bool $withAdmin 是否要求校验管理员账号及确认密码，并在未输入密码时使用默认密码。
+     * @return array 校验标志、失败原因及管理员账号和原输入或默认密码。
      */
     private function normalizeAdminConfig(array $admin, bool $withAdmin): array
     {
@@ -562,7 +562,7 @@ class InstallService extends BaseService
         $confirmPassword = (string)($admin['confirm_password'] ?? '');
         if ($withAdmin) {
             if ($account === '') {
-                $account = 'admin';
+                $account = 'demo';
             }
             if (!preg_match('/^[A-Za-z][A-Za-z0-9_]{2,31}$/', $account)) {
                 return ['valid' => false, 'message' => '管理员账号需以字母开头，支持字母、数字、下划线，长度 3-32 位'];
@@ -575,7 +575,7 @@ class InstallService extends BaseService
                     return ['valid' => false, 'message' => '管理员密码至少 6 位'];
                 }
             } else {
-                $password = $this->generatePassword();
+                $password = 'demo';
             }
         }
 
@@ -2085,22 +2085,6 @@ class InstallService extends BaseService
         } while ($appKey === $existing);
 
         return $appKey;
-    }
-
-    /**
-     * 生成随机管理员密码。
-     *
-     * @return string 从允许字符集中随机生成的十四位管理员密码。
-     */
-    private function generatePassword(): string
-    {
-        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%';
-        $password = '';
-        for ($i = 0; $i < 14; $i++) {
-            $password .= $alphabet[random_int(0, strlen($alphabet) - 1)];
-        }
-
-        return $password;
     }
 
     /**

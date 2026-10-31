@@ -148,6 +148,7 @@ import Special from '@/components/mobilePage/Special.vue'
 import Live from '@/components/mobilePage/Live.vue'
 import Content from '@/components/mobilePage/Content.vue'
 import HotZone from '@/components/mobilePage/HotZone.vue'
+import Product from '@/components/mobilePage/Product.vue'
 import {
   getDiyPageList,
   getDiyPageDetail,
@@ -172,6 +173,7 @@ const MPAGE_MAP = {
   special: Special,
   live: Live,
   content: Content,
+  product: Product,
   hot_zone: HotZone
 }
 

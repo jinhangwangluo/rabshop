@@ -31,7 +31,10 @@ use think\Response;
  */
 class Special extends AuthController implements ResourceControllerInterface
 {
-    use ResourceControllerTrait;
+    use ResourceControllerTrait {
+        update as protected resourceTraitUpdate;
+        delete as protected resourceTraitDelete;
+    }
 
     /**
      * 当前商户专题管理与归属校验服务。
@@ -51,6 +54,33 @@ class Special extends AuthController implements ResourceControllerInterface
         $params = $this->request->getMore($this->getIndexFields());
         $params['merchant_id'] = (int)$this->merchantId;
         return $this->success($this->service->getResourceList($params));
+    }
+
+    /**
+     * 编辑专题前显式校验归属。
+     *
+     * ResourceControllerTrait::eventMethod 会吞掉 AdminResponseException，
+     * 仅依赖 beforeUpdate 钩子无法阻止跨商户修改，因此这里在进入资源流程前直接校验。
+     *
+     * @param mixed $id 专题标识
+     * @return mixed 资源更新结果
+     */
+    public function update($id)
+    {
+        $this->service->checkMerchantOwner((int)$this->merchantId, (int)$id, '专题');
+        return $this->resourceTraitUpdate($id);
+    }
+
+    /**
+     * 删除专题前显式校验归属，避免跨商户删除及其关联商品数据。
+     *
+     * @param mixed $id 专题标识
+     * @return mixed 资源删除结果
+     */
+    public function delete($id)
+    {
+        $this->service->checkMerchantOwner((int)$this->merchantId, (int)$id, '专题');
+        return $this->resourceTraitDelete($id);
     }
 
     /**
@@ -115,6 +145,7 @@ class Special extends AuthController implements ResourceControllerInterface
             // contents为 null 表示不修改内容列表
             ['contents', null],
             ['tag_ids', null],
+            ['product_ids', null],
         ];
     }
 

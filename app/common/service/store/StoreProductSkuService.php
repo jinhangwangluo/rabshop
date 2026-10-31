@@ -340,6 +340,8 @@ class StoreProductSkuService extends BaseService implements ResourceServiceInter
             ->toArray();
 
         $config = app()->make(StoreProductSpecConfigService::class)->findByProductId($productId);
+        // 历史采集上架没有自定义规格快照，前台规格弹窗也要从采集规格还原，不能只靠空的 spec_value_ids。
+        $config = app()->make(ProductLibraryService::class)->presentCollectedSpecConfig($config, $skus);
         $skuSpecKeyMap = $this->buildSkuSpecKeyMap($config);
         foreach ($skus as &$sku) {
             $sku['spec_key'] = $skuSpecKeyMap[(string)($sku['uniqid'] ?? '')] ?? '';

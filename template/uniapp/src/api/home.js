@@ -82,12 +82,12 @@ export function getDiyComponentData(params = {}, options = {}) {
 /**
  * 获取个人中心 DIY 装修配置。
  *
- * 使用方式：个人中心进入时调用，用返回的 service_menus、banner 与会员入口状态覆盖默认展示；
+ * 使用方式：个人中心进入时调用，用返回的 service_menus、banner、recommend_type 与会员入口状态覆盖默认展示；
  * 匿名用户可访问，登录用户会随请求自动带上登录态。
  *
  * @param {Object} params 查询参数，通常留空。
  * @param {Object} options 透传给请求封装的附加选项。
- * @returns {Promise<Object>} 成功时返回个人中心菜单和广告配置。
+ * @returns {Promise<Object>} 成功时返回个人中心菜单、广告和推荐展示类型配置。
  */
 export function getDiyUserCenterConfig(params = {}, options = {}) {
   return get('diy/user_center', params, {

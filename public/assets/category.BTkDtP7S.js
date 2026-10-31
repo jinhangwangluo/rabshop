@@ -1,0 +1,1 @@
+import{Q as e,R as a}from"./main.CpwLkC3s.js";function t(t={},o={}){return e("diy/category_page/config",t,{authMode:a.OPTIONAL,loginRedirect:!1,...o})}function o(t={},o={}){return e("special/category/tree",t,{authMode:a.NONE,...o})}export{t as a,o as g};

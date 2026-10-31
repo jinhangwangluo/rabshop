@@ -26,6 +26,7 @@ use think\facade\Db;
 
 /**
  * 负责插件自有菜单、移动页面及装修资源的持久化与清理，隔离宿主数据操作。
+ * 每次解析独立模型，避免已保存实例覆盖下一条迁移或资源归属记录。
  */
 class DatabasePluginInstallRepository
 {
@@ -39,7 +40,7 @@ class DatabasePluginInstallRepository
     public function locked(string $code, callable $callback): mixed
     {
         return Db::transaction(function () use ($code, $callback) {
-            $plugin = app()->make(Plugin::class)->where('code', $code)->lock(true)->find();
+            $plugin = app()->make(Plugin::class, [], true)->where('code', $code)->lock(true)->find();
             if (!$plugin) {
                 throw new PluginLifecycleException('插件不存在', 'PLUGIN_NOT_FOUND');
             }
@@ -56,7 +57,7 @@ class DatabasePluginInstallRepository
      */
     public function migration(string $code, string $name): ?array
     {
-        $row = app()->make(PluginMigration::class)->where(['plugin_code' => $code, 'migration_name' => $name])->find();
+        $row = app()->make(PluginMigration::class, [], true)->where(['plugin_code' => $code, 'migration_name' => $name])->find();
         return $row?->toArray();
     }
 
@@ -70,13 +71,13 @@ class DatabasePluginInstallRepository
      */
     public function saveMigration(string $code, string $name, array $data): void
     {
-        $query = app()->make(PluginMigration::class)->where(['plugin_code' => $code, 'migration_name' => $name]);
+        $query = app()->make(PluginMigration::class, [], true)->where(['plugin_code' => $code, 'migration_name' => $name]);
         $row = $query->find();
         $data['update_time'] = date('Y-m-d H:i:s');
         if ($row) {
             $row->save($data);
         } else {
-            app()->make(PluginMigration::class)->save($data + ['plugin_code' => $code, 'migration_name' => $name, 'create_time' => $data['update_time']]);
+            app()->make(PluginMigration::class, [], true)->save($data + ['plugin_code' => $code, 'migration_name' => $name, 'create_time' => $data['update_time']]);
         }
     }
 
@@ -90,7 +91,7 @@ class DatabasePluginInstallRepository
      */
     public function resource(string $code, string $type, string $key): ?array
     {
-        $row = app()->make(PluginResource::class)->withTrashed()->where(['plugin_code' => $code, 'resource_type' => $type, 'resource_key' => $key])->find();
+        $row = app()->make(PluginResource::class, [], true)->withTrashed()->where(['plugin_code' => $code, 'resource_type' => $type, 'resource_key' => $key])->find();
         return $row?->toArray();
     }
 
@@ -102,7 +103,7 @@ class DatabasePluginInstallRepository
      */
     public function parentMenu(int $id): ?array
     {
-        $row = app()->make(Menu::class)->where('id', $id)->field('id,pid,platform_type,auth_type,status')->find();
+        $row = app()->make(Menu::class, [], true)->where('id', $id)->field('id,pid,platform_type,auth_type,status')->find();
         return $row?->toArray();
     }
 
@@ -132,16 +133,28 @@ class DatabasePluginInstallRepository
         }
         $data += ['create_time' => date('Y-m-d H:i:s'), 'update_time' => date('Y-m-d H:i:s'), 'delete_time' => null];
         if ($row) {
+            /*
+             * withTrashed 只放宽读取范围；直接 save 仍会过滤软删除记录，必须先恢复。
+             */
+            if ($row->trashed() && !$row->restore()) {
+                throw new PluginLifecycleException('插件资源恢复失败', 'PLUGIN_RESOURCE_RESTORE_FAILED');
+            }
             $row->save($data);
         } else {
             $row = $model->create($data);
         }
         $resourceData = ['resource_id' => (string)$row['id'], 'snapshot_json' => $data, 'status' => 'active', 'delete_time' => null, 'update_time' => date('Y-m-d H:i:s')];
-        $resource = app()->make(PluginResource::class)->withTrashed()->where(['plugin_code' => $code, 'resource_type' => $type, 'resource_key' => $key])->find();
+        $resource = app()->make(PluginResource::class, [], true)->withTrashed()->where(['plugin_code' => $code, 'resource_type' => $type, 'resource_key' => $key])->find();
         if ($resource) {
+            /*
+             * 卸载保留的归属账本需要恢复后再更新，避免新菜单已创建却未记录实际 ID。
+             */
+            if ($resource->trashed() && !$resource->restore()) {
+                throw new PluginLifecycleException('插件资源归属恢复失败', 'PLUGIN_RESOURCE_RESTORE_FAILED');
+            }
             $resource->save($resourceData);
         } else {
-            app()->make(PluginResource::class)->save($resourceData + ['plugin_code' => $code, 'resource_type' => $type, 'resource_key' => $key]);
+            app()->make(PluginResource::class, [], true)->save($resourceData + ['plugin_code' => $code, 'resource_type' => $type, 'resource_key' => $key]);
         }
         return (int)$row['id'];
     }
@@ -157,7 +170,7 @@ class DatabasePluginInstallRepository
     {
         $menuIds = [];
         $linkIds = [];
-        $resources = app()->make(PluginResource::class)->where(['plugin_code' => $code, 'status' => 'active'])->select();
+        $resources = app()->make(PluginResource::class, [], true)->where(['plugin_code' => $code, 'status' => 'active'])->select();
         foreach ($resources as $resource) {
             $type = (string)$resource['resource_type'];
             if (!in_array($type, ['menu', 'page_link', 'page'], true)) {
@@ -171,7 +184,7 @@ class DatabasePluginInstallRepository
                 $linkIds[] = $id;
             }
             if ($type === 'page') {
-                app()->make(DiyComponent::class)->withTrashed()->where('diy_page_id', $id)->delete(true);
+                app()->make(DiyComponent::class, [], true)->withTrashed()->where('diy_page_id', $id)->delete(true);
             }
             $this->resourceModel($type)->withTrashed()->where('id', $id)->delete(true);
             $resource->save(['status' => 'removed', 'delete_time' => date('Y-m-d H:i:s')]);
@@ -179,7 +192,7 @@ class DatabasePluginInstallRepository
         if ($menuIds !== []) {
             $last = 0;
             do {
-                $roles = app()->make(AdminRole::class)->where('id', '>', $last)->order('id')->limit(200)->select();
+                $roles = app()->make(AdminRole::class, [], true)->where('id', '>', $last)->order('id')->limit(200)->select();
                 foreach ($roles as $role) {
                     $last = (int)$role['id'];
                     $rules = $role['rule'];
@@ -194,12 +207,12 @@ class DatabasePluginInstallRepository
         }
         $types = $declaration['diy_components'] ?? [];
         if ($types !== []) {
-            app()->make(DiyComponent::class)->withTrashed()->whereIn('component_type', $types)->delete(true);
+            app()->make(DiyComponent::class, [], true)->withTrashed()->whereIn('component_type', $types)->delete(true);
         }
         // 共享装修页只移除插件链接，避免卸载时删除宿主页面。
         $last = 0;
         do {
-            $components = app()->make(DiyComponent::class)->where('id', '>', $last)->order('id')->limit(200)->lock(true)->select();
+            $components = app()->make(DiyComponent::class, [], true)->where('id', '>', $last)->order('id')->limit(200)->lock(true)->select();
             foreach ($components as $component) {
                 $last = (int)$component['id'];
                 $config = $component['config'];
@@ -274,6 +287,6 @@ class DatabasePluginInstallRepository
             'page_link' => DiyPageLink::class,
             'page' => DiyPage::class,
             default => throw new PluginLifecycleException('资源类型无效', 'PLUGIN_RESOURCE_INVALID'),
-        });
+        }, [], true);
     }
 }

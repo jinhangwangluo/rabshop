@@ -431,8 +431,8 @@ class AdminService extends BaseService
         $method = Str::trimStrtolower($request->method());
         $rule = str_replace('api/admin/', '', trim(strtolower($request->rule()->getRule())));
 
-        // 登出和信息特殊处理
-        if (in_array($rule, [RuleEnum::ADMIN_LOGOUT_URL, RuleEnum::ADMIN_INFO_URL])) {
+        // 退出和当前管理员信息是认证生命周期接口，不能依赖角色菜单，否则子管理员无法退出或初始化。
+        if (in_array($rule, [RuleEnum::ADMIN_LOGOUT_URL, RuleEnum::ADMIN_INFO_URL], true)) {
             return true;
         }
 
@@ -462,14 +462,24 @@ class AdminService extends BaseService
         }
 
         // 配置管理特殊处理
-        if (RuleEnum::CONFIG_SAVE_URL === $rule) {
+        // 配置管理特殊处理：保存（POST）按已授权表单菜单 url 尾部数字限定可保存的配置 id。
+        // 该接口 GET/POST 同规则，而 GET 读取配置没有 id，不能进入本分支，否则已授权的子管理员无法加载配置值。
+        if (RuleEnum::CONFIG_SAVE_URL === $rule && $method === 'post') {
             $configId = $request->post('id/d', 0);
             if (!$configId) {
                 throw new ValidateException('非法访问缺少参数');
             }
             if (collect($adminLevelMenus)->filter(function ($item) use ($configId) {
-                if (str_contains($item['url'], RuleEnum::CONFIG_VIEW_URL_PREFIX)) {
-                    return (int)str_replace(RuleEnum::CONFIG_VIEW_URL_PREFIX, '', $item['url']) === $configId;
+                $url = trim((string)$item['url']);
+                // 统一补齐前导斜杠，兼容有无斜杠两种历史存储格式后再匹配表单路由前缀
+                if ($url !== '' && $url[0] !== '/') {
+                    $url = '/' . $url;
+                }
+                if (str_contains($url, RuleEnum::CONFIG_VIEW_URL_PREFIX)) {
+                    // 提取 /setting/config/form/<id> 尾部数字作为该角色可保存的配置 id；
+                    // 必须先去掉剩余部分的斜杠，(int)'/2' 会因前导非数字被强转为 0，导致校验永远失败
+                    $suffix = trim(substr($url, strlen(RuleEnum::CONFIG_VIEW_URL_PREFIX)), '/');
+                    return (int)$suffix === $configId;
                 }
 
                 return false;

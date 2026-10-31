@@ -71,6 +71,35 @@ class Special extends BaseController
     }
 
     /**
+     * 获取专题关联商品列表.
+     *
+     * GET 参数：
+     * - id int 专题 ID；兼容 special_id。
+     * - page int 页码，默认 1。
+     * - limit int 每页数量，默认 10，最大 20。
+     *
+     * 匿名用户可访问；登录用户会返回会员价相关字段。
+     *
+     * @return Response 返回关联商品列表及分页信息。
+     */
+    public function products(): Response
+    {
+        $specialId = (int)$this->request->get('id/d', $this->request->get('special_id/d', 0));
+        if ($specialId <= 0) {
+            return $this->fail('专题ID不能为空');
+        }
+
+        $params = $this->request->only(['page', 'limit']);
+        $data = $this->service->getMobileRelatedProducts(
+            $specialId,
+            (int)($this->request->user_id ?? 0),
+            is_array($params) ? $params : []
+        );
+
+        return $this->success('获取成功', $data);
+    }
+
+    /**
      * 获取专题下的音频列表.
      *
      * GET 参数：

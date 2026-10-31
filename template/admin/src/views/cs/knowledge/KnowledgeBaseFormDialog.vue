@@ -105,6 +105,7 @@ import {
   getCsAiModelList
 } from '@/api/cs'
 import Upload from '@/components/Upload'
+import { usePageSlots, modelField, slotAction, validateForm, operationResult, trackPageSlotAction } from '@/utils/pageSlots'
 
 const defaultForm = () => ({
   id: 0,
@@ -127,8 +128,11 @@ const { proxy } = getCurrentInstance()
 const message = proxy.$message
 const visible = ref(false)
 const saving = ref(false)
+const modelsLoading = ref(true)
 const formRef = ref(null)
 const form = reactive(defaultForm())
+const openSequence = ref(0)
+const handleSave = trackPageSlotAction('save', saveKnowledgeBase)
 const rules = {
   name: [{ required: true, message: '请输入知识库名称', trigger: 'blur' }]
 }
@@ -137,6 +141,33 @@ const thresholdMarks = {
   0.6: '0.60',
   0.75: '0.75'
 }
+
+usePageSlots({
+  kind: 'dialog',
+  active: visible,
+  identity: () => `${form.id}:${openSequence.value}`,
+  page: () => ({ id: 'cs.knowledge.form', title: form.id ? '编辑知识库' : '新建知识库', description: '维护知识库信息和检索配置', entityId: form.id, mode: form.id ? 'edit' : 'create' }),
+  ready: () => !!formRef.value && !modelsLoading.value,
+  busy: saving,
+  fields: () => [
+    modelField(form, 'name', '知识库名称', { required: true, schema: { type: 'string', maxLength: 50 }}),
+    modelField(form, 'description', '描述', { schema: { type: 'string', maxLength: 200 }}),
+    modelField(form, 'cover', '封面图', { schema: { type: 'string', maxLength: 2048 }}),
+    modelField(form, 'ai_model_id', '绑定AI模型', {
+      schema: { enum: [0, '', ...aiModelOptions.value.map(item => Number(item.id))] },
+      options: [{ value: 0, label: '使用系统默认' }, ...aiModelOptions.value.map(item => ({ value: Number(item.id), label: getAiModelOptionLabel(item) }))]
+    }),
+    modelField(form, 'threshold', '相似度阈值', { schema: { type: 'number', min: 0.1, max: 1, precision: 2 }}),
+    modelField(form, 'search_limit', '最多返回条数', { schema: { type: 'integer', min: 1, max: 20 }}),
+    modelField(form, 'sort', '排序', { schema: { type: 'integer', min: 0, max: 9999 }}),
+    modelField(form, 'status', '状态', { schema: { enum: [0, 1] }, options: [{ value: 1, label: '启用' }, { value: 0, label: '禁用' }] })
+  ],
+  actions: {
+    validate: slotAction('校验知识库表单', () => validateForm(formRef.value)),
+    save: slotAction('保存知识库', handleSave),
+    close: slotAction('关闭弹窗', () => { visible.value = false; return { ok: true } })
+  }
+})
 
 async function fetchAiModels() {
   const res = await getCsAiModelList({ status: 1, page: 1, limit: 100 })
@@ -157,6 +188,7 @@ function getAiModelOptionLabel(model) {
 }
 
 function open(item = null) {
+  openSequence.value += 1
   if (item) {
     Object.assign(form, {
       id: Number(item.id),
@@ -179,10 +211,16 @@ function resetForm() {
   formRef.value && formRef.value.clearValidate()
 }
 
-async function handleSave() {
-  const valid = await new Promise(resolve => formRef.value.validate(resolve))
-  if (!valid) return
+async function saveKnowledgeBase(args, context) {
+  if (saving.value) return { ok: false, code: 'BUSY', message: '正在保存' }
+  const sequence = openSequence.value
+  const id = form.id
+  const validation = await validateForm(formRef.value)
+  if (!validation.ok) return validation
+  context.assertCurrent()
 
+  // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+  // eslint-disable-next-line require-atomic-updates
   saving.value = true
   try {
     const payload = {
@@ -196,17 +234,22 @@ async function handleSave() {
       search_limit: Number(form.search_limit)
     }
 
-    if (form.id > 0) {
-      await updateCsKnowledgeBase(form.id, payload)
+    if (id > 0) {
+      await updateCsKnowledgeBase(id, payload)
       message.success('修改成功')
     } else {
       await createCsKnowledgeBase(payload)
       message.success('创建成功')
     }
 
-    visible.value = false
+    if (openSequence.value === sequence) visible.value = false
     emit('saved')
+    return { ok: true }
+  } catch (error) {
+    return operationResult(error)
   } finally {
+    // 插槽同步门禁和上下文校验保护本次操作；finally 只收敛本次忙碌状态。
+    // eslint-disable-next-line require-atomic-updates
     saving.value = false
   }
 }
@@ -214,7 +257,7 @@ async function handleSave() {
 defineExpose({ open })
 
 onBeforeMount(() => {
-  fetchAiModels()
+  fetchAiModels().catch(() => {}).finally(() => { modelsLoading.value = false })
 })
 </script>
 

@@ -141,6 +141,7 @@ class Article extends AuthController implements ResourceControllerInterface
             ['is_banner', 0],
             ['status', 1],
             ['tag_ids', null],
+            ['product_ids', null],
         ];
     }
 

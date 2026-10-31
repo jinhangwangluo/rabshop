@@ -1,0 +1,1 @@
+import{Q as o,R as a,ai as i}from"./main.CpwLkC3s.js";function e(i={},e={}){return o("/api/mobile/coupon/list",i,{authMode:a.REQUIRED,...e})}function n(i={},e={}){return o("/api/mobile/coupon/user_list",i,{authMode:a.REQUIRED,...e})}function t(o={},e={}){return i("/api/mobile/coupon/receive",o,{authMode:a.REQUIRED,...e})}export{e as a,n as g,t as r};

@@ -159,7 +159,12 @@ class MobileProductService extends BaseService
         $data['display_view_count'] = (int) ($data['view_count'] ?? 0) + (int) ($data['virtual_view_count'] ?? 0);
         // 规格数据（6.4 结构）
         $data['sku_data'] = app()->make(StoreProductSkuService::class)->getSkuData((int) $data['id']);
-        $data['spec_config'] = app()->make(StoreProductSpecConfigService::class)->findByProductId((int) $data['id']);
+        $specConfig = app()->make(StoreProductSpecConfigService::class)->findByProductId((int) $data['id']);
+        // 与后台编辑页一致：历史采集上架按采集规格展示，不把拆分库商品当成规格模板值。
+        $data['spec_config'] = app()->make(ProductLibraryService::class)->presentCollectedSpecConfig(
+            $specConfig,
+            is_array($data['sku_data']['sku_list'] ?? null) ? $data['sku_data']['sku_list'] : []
+        );
         $data = app()->make(TagService::class)->attachTagsToDetail($data, TagService::RELATION_TYPE_PRODUCT);
         $reviewSummary = app()->make(OrderReviewService::class)->getMobileProductReviewSummary((int) $data['id']);
         $data['store_profile'] = $this->resolveStoreProfile($data, $reviewSummary);

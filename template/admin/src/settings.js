@@ -1,4 +1,4 @@
-const VITE_APP_BASE_API = 'http://127.0.0.1:25780/api/admin' || import.meta.env.VITE_APP_BASE_API || `${location.origin}/api/admin`
+const VITE_APP_BASE_API = 'https://demo.rabshop.cn/api/admin' || import.meta.env.VITE_APP_BASE_API || `${location.origin}/api/admin`
 
 export default {
   /**

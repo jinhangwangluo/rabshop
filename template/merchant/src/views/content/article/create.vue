@@ -23,7 +23,7 @@
 
     <el-card shadow="never" class="create-card">
       <el-form
-        ref="form"
+        ref="formRef"
         v-loading="loading"
         :model="form"
         :rules="rules"
@@ -471,6 +471,70 @@
           </el-form-item>
         </div>
 
+        <!-- 关联商品 -->
+        <div class="form-section">
+          <div class="section-title">
+            关联商品
+            <span class="section-desc">（已选 {{ form.products.length }} 个商品）</span>
+          </div>
+
+          <el-form-item label="关联商品">
+            <div class="product-association">
+              <div class="product-association-header">
+                <el-button type="primary" plain @click="openProductPicker">选择商品</el-button>
+                <el-button v-if="form.products.length" type="text" @click="clearProducts">清空</el-button>
+              </div>
+
+              <el-table
+                v-if="form.products.length"
+                :data="form.products"
+                row-key="id"
+                border
+                class="product-table"
+              >
+                <el-table-column label="封面" width="90" align="center">
+                  <template #default="scope">
+                    <el-image
+                      v-if="scope.row.cover"
+                      :src="scope.row.cover"
+                      class="mini-cover"
+                      fit="cover"
+                    />
+                    <div v-else class="table-cover-placeholder">暂无</div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="name" label="商品名称" min-width="220" show-overflow-tooltip />
+                <el-table-column label="价格" width="110" align="center">
+                  <template #default="scope">
+                    ¥{{ formatProductPrice(scope.row.price) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="stock" label="库存" width="90" align="center" />
+                <el-table-column label="状态" width="120" align="center">
+                  <template #default="scope">
+                    <el-tag :type="getProductStatusType(scope.row)" size="mini">
+                      {{ getProductStatusText(scope.row) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="90" fixed="right" align="center">
+                  <template #default="scope">
+                    <el-button type="text" :icon="Delete" @click="removeProduct(scope.$index)">移除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <div v-else class="product-empty">
+                暂未关联商品，选择后会在移动端内容详情页展示
+              </div>
+
+              <div class="form-tip">
+                商品用于内容详情页导购，只展示已上架且审核通过的商品；已下架或已删除商品会保留在列表中，可手动移除。
+              </div>
+            </div>
+          </el-form-item>
+        </div>
+
         <!-- 提交按钮 -->
         <div class="form-footer">
           <el-button type="primary" :loading="submitLoading" @click="submitForm">
@@ -564,6 +628,12 @@
         </span>
       </template>
     </el-dialog>
+
+    <ProductMultiPicker
+      v-model:visible="productPickerVisible"
+      :selected-products="selectedAvailableProducts"
+      @confirm="handleProductConfirm"
+    />
   </div>
 </template>
 
@@ -586,6 +656,7 @@ import '@wangeditor/editor/dist/css/style.css'
 import Upload from '@/components/Upload/index'
 import BigFileUpload from '@/components/BigFileUpload/index'
 import TagSelector from '@/components/TagSelector/index'
+import ProductMultiPicker from '@/components/ProductMultiPicker/index'
 import { importAiTags } from '@/api/tag'
 import ArticleContentPreview from './components/ArticleContentPreview'
 
@@ -671,8 +742,60 @@ const form = reactive({
   status: 1,
   keywords: '',
   source: '',
-  tag_ids: []
+  tag_ids: [],
+  products: []
 })
+
+const productPickerVisible = ref(false)
+
+const selectedAvailableProducts = computed(() => form.products.filter(
+  (item) => item && item.is_available !== false && !item.is_deleted
+))
+
+function openProductPicker() {
+  productPickerVisible.value = true
+}
+
+/**
+ * 合并商品选择结果。
+ *
+ * 弹窗只展示在售商品，已下架或已删除的历史关联不在弹窗内，需要保留下来由用户手动移除。
+ */
+function handleProductConfirm(products) {
+  const confirmed = Array.isArray(products) ? products : []
+  const confirmedIds = new Set(confirmed.map((item) => Number(item.id)))
+  const unavailable = form.products.filter(
+    (item) => (item.is_available === false || item.is_deleted) && !confirmedIds.has(Number(item.id))
+  )
+  form.products = [...confirmed, ...unavailable]
+}
+
+function removeProduct(index) {
+  form.products.splice(index, 1)
+}
+
+function clearProducts() {
+  form.products = []
+}
+
+function formatProductPrice(value) {
+  return Number(value || 0).toFixed(2)
+}
+
+function getProductStatusText(item) {
+  if (item.is_deleted) return '已删除'
+  if (Number(item.status) !== 1) return '已下架'
+  if (Number(item.audit_status) !== 1) return '审核未通过'
+  return '在售'
+}
+
+function getProductStatusType(item) {
+  if (item.is_deleted) return 'danger'
+  if (Number(item.status) !== 1) return 'info'
+  if (Number(item.audit_status) !== 1) return 'warning'
+  return 'success'
+}
+
 const rules = {
   title: [
     { required: true, message: '请输入内容标题', trigger: 'blur' },
@@ -821,7 +944,8 @@ function getDetail(id) {
       trial_images: Array.isArray(data.trial_images) ? data.trial_images : [],
       content: data.content || '',
       trial_content: data.trial_content || '',
-      tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : []
+      tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids : [],
+      products: Array.isArray(data.products) ? data.products : []
     })
     isPaid.value = form.price > 0
     loading.value = false
@@ -1076,6 +1200,8 @@ function submitForm() {
     }
     submitLoading.value = true
     const submitData = { ...form }
+    submitData.product_ids = form.products.map((item) => Number(item.id)).filter((id) => id > 0)
+    delete submitData.products
     if (!isPaid.value) {
       submitData.price = 0
       submitData.original_price = 0
@@ -1185,6 +1311,46 @@ onBeforeUnmount(() => {
     margin-bottom: 20px;
     padding-left: 10px;
     border-left: 3px solid #409eff;
+  }
+
+  .section-desc {
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    color: #909399;
+  }
+}
+
+.product-association {
+  width: 100%;
+
+  .product-association-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .product-table {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .mini-cover {
+    width: 54px;
+    height: 38px;
+    border-radius: 4px;
+  }
+
+  .table-cover-placeholder {
+    color: #c0c4cc;
+    font-size: 12px;
+  }
+
+  .product-empty {
+    padding: 24px 0;
+    color: #c0c4cc;
+    font-size: 13px;
   }
 }
 

@@ -1,0 +1,1 @@
+import{D as n,E as e}from"./main.CpwLkC3s.js";function r(r){const i=Number(r||0);return Number.isNaN(i)||i<=0?(n({title:"平台自营暂无店铺主页",icon:"none"}),!1):(e({url:`/pages/merchant/index/index?merchant_id=${i}`}),!0)}export{r as n};

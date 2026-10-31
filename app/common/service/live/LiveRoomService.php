@@ -276,6 +276,7 @@ class LiveRoomService extends BaseService implements ResourceServiceInterfaceTra
      */
     public function resourceSave(array $data): mixed
     {
+        $this->assertLiveCategory($data);
         $data = $this->normalizeStreamTypeData($data);
         $this->assertLiveTimeRange($data);
         $data = $this->filterSensitiveFields($data, ['title', 'description', 'notice', 'welcome_msg', 'intro', 'keywords']);
@@ -307,6 +308,7 @@ class LiveRoomService extends BaseService implements ResourceServiceInterfaceTra
      */
     public function resourceUpdate($id, array $data): mixed
     {
+        $this->assertLiveCategory($data);
         $data = $this->normalizeStreamTypeData($data);
         $this->assertLiveTimeRange($data);
         $data = $this->filterSensitiveFields($data, ['title', 'description', 'notice', 'welcome_msg', 'intro', 'keywords']);
@@ -337,6 +339,14 @@ class LiveRoomService extends BaseService implements ResourceServiceInterfaceTra
         }
 
         return true;
+    }
+
+    /** @param array $data 保存字段；未提交分类时保留原值。 @return void */
+    protected function assertLiveCategory(array $data): void
+    {
+        if (array_key_exists('category_id', $data) && (int)$data['category_id'] > 0) {
+            app()->make(LiveCategoryService::class, [], true)->resourceRead((int)$data['category_id']);
+        }
     }
 
     /**
