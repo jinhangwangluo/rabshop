@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>功能清单 - 乖乖兔多商户平台系统框架</title>
+    <link rel="stylesheet" href="assets/element-ui/index.css">
+    <link rel="stylesheet" href="assets/site.css">
+    <link rel="stylesheet" href="assets/market.css">
+    <link rel="stylesheet" href="assets/features-product-v2.css">
+</head>
+<body class="page-features">
+<header class="site-header">
+    <div class="site-container site-header__inner">
+        <a class="site-brand" href="/" aria-label="乖乖兔">
+            <img class="site-brand__logo" src="assets/logo.png" alt="">
+            <span class="site-brand__text">乖乖兔</span>
+        </a>
+
+        <button class="site-nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span class="visually-hidden">展开导航</span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="主导航">
+                                            <a
+                    class="site-nav__link"
+                    href="/"
+                >
+                    首页                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/features"
+                >
+                    产品功能                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/plugins"
+                >
+                    插件市场                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/#tech"
+                >
+                    框架技术                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/pricing"
+                >
+                    价格方案                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/#contact"
+                >
+                    服务支持                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/about"
+                >
+                    关于我们                </a>
+                    </nav>
+
+        <div class="site-header__auth">
+            <a class="site-header__register" href="javascript:void(0)" id="site-login-open">登录/注册</a>
+        </div>
+    </div>
+</header>
+
+<main class="site-main">
+    <section class="fp-carousel" data-carousel aria-roledescription="carousel" aria-label="产品功能亮点">
+        <div class="fp-carousel__inner">
+            <article class="fp-slide is-active" data-slide="0" role="group" aria-roledescription="slide" aria-label="第 1 张：三端功能">
+                <div class="fp-slide__inner">
+                    <div class="fp-slide__copy">
+                        <p class="fp-kicker">产品功能清单</p>
+                        <h1 class="fp-hero__title">三端功能，<span>一次看清</span></h1>
+                        <p class="fp-hero__desc">平台统一管控、商户自主经营、用户随时交易。<br>覆盖商品、内容、直播、营销与会员运营全链路。</p>
+                        <ul class="fp-points">
+                            <li>平台统一管控</li>
+                            <li>商户独立经营</li>
+                            <li>用户随时交易</li>
+                        </ul>
+                        <div class="fp-hero__actions">
+                            <a class="fp-btn fp-btn--primary" href="#compare">查看版本对比 <i class="el-icon-right" aria-hidden="true"></i></a>
+                            <a class="fp-btn fp-btn--ghost" href="/pricing">查看价格方案</a>
+                        </div>
+                    </div>
+                    <div class="fp-slide__media">
+                        <div class="fp-hero__stage">
+                            <div class="fp-orbit" aria-hidden="true">
+                                <span class="fp-orbit__ring fp-orbit__ring--one"></span>
+                                <span class="fp-orbit__ring fp-orbit__ring--two"></span>
+                                <span class="fp-orbit__ring fp-orbit__ring--three"></span>
+                            </div>
+                            <img class="fp-float fp-float--platform" src="assets/3d/platform-operation.png" width="310" height="297" alt="" aria-hidden="true">
+                            <img class="fp-float fp-float--merchant" src="assets/3d/merchant-store.png" width="300" height="283" alt="" aria-hidden="true">
+                            <div class="fp-phone fp-phone--left"><img src="assets/screenshots/category.png" alt="移动端分类页面" width="856" height="1862" fetchpriority="high"></div>
+                            <div class="fp-phone fp-phone--main"><img src="assets/screenshots/home.webp" alt="移动端首页" width="750" height="1625" fetchpriority="high"></div>
+                            <div class="fp-phone fp-phone--right"><img src="assets/screenshots/member-vip.webp" alt="移动端会员中心" width="750" height="1631" fetchpriority="high"></div>
+                            <span class="fp-hero__badge">平台 · 商户 · 移动</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="fp-slide" data-slide="1" role="group" aria-roledescription="slide" aria-label="第 2 张：版本对比" inert aria-hidden="true">
+                <div class="fp-slide__inner">
+                    <div class="fp-slide__copy">
+                        <p class="fp-kicker">版本与授权</p>
+                        <h2 class="fp-slide__title">三个版本，<span>按需选择</span></h2>
+                        <p class="fp-hero__desc">PHP 免费版免费使用，Java 版 ¥1388，企业版 ¥5999；三版都包含全部商业功能。</p>
+                        <div class="fp-slide__actions">
+                            <a class="fp-btn fp-btn--primary" href="#compare">查看版本对比 <i class="el-icon-right" aria-hidden="true"></i></a>
+                            <a class="fp-btn fp-btn--ghost" href="/pricing">查看价格方案</a>
+                        </div>
+                    </div>
+                    <div class="fp-slide__media fp-slide__media--center">
+                        <div class="fp-plan-mini">
+                            <div class="fp-plan-mini__plans">
+                                <div class="fp-plan-mini__plan">
+                                    <span class="fp-plan-mini__label">PHP 免费版</span>
+                                    <strong class="fp-plan-mini__price">免费使用</strong>
+                                    <span class="fp-plan-mini__hint">PHP · 部分功能加密</span>
+                                </div>
+                                <div class="fp-plan-mini__plan">
+                                    <span class="fp-plan-mini__label">Java 版</span>
+                                    <strong class="fp-plan-mini__price">¥1388</strong>
+                                    <span class="fp-plan-mini__hint">Java · 商业授权</span>
+                                </div>
+                                <div class="fp-plan-mini__plan fp-plan-mini__plan--pro">
+                                    <span class="fp-plan-mini__label">企业版</span>
+                                    <strong class="fp-plan-mini__price">¥5999</strong>
+                                    <span class="fp-plan-mini__hint">无加密 · 完整源码</span>
+                                </div>
+                            </div>
+                            <p class="fp-plan-mini__foot">三版都包含全部商业功能 · 永久免费升级</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="fp-slide" data-slide="2" role="group" aria-roledescription="slide" aria-label="第 3 张：产品能力" inert aria-hidden="true">
+                <div class="fp-slide__inner">
+                    <div class="fp-slide__copy">
+                        <p class="fp-kicker">产品能力</p>
+                        <h2 class="fp-slide__title">内容、直播、营销、装修，<span>一套系统</span></h2>
+                        <p class="fp-hero__desc">内容付费、直播互动、营销分销、页面装修与 AI 客服，共用一套会员和交易底座。</p>
+                        <div class="fp-slide__actions">
+                            <a class="fp-btn fp-btn--primary" href="#product">查看产品能力 <i class="el-icon-right" aria-hidden="true"></i></a>
+                            <a class="fp-btn fp-btn--ghost" href="/plugins">查看插件市场</a>
+                        </div>
+                    </div>
+                    <div class="fp-slide__media">
+                        <div class="fp-collage">
+                            <div class="fp-collage__panel" aria-hidden="true"></div>
+                            <img class="fp-collage__icon fp-collage__icon--content" src="assets/3d/content-pay.png" width="301" height="310" alt="" aria-hidden="true">
+                            <img class="fp-collage__icon fp-collage__icon--live" src="assets/3d/live-commerce.png" width="314" height="268" alt="" aria-hidden="true">
+                            <img class="fp-collage__icon fp-collage__icon--distribution" src="assets/3d/member-distribution.png" width="298" height="287" alt="" aria-hidden="true">
+                            <img class="fp-collage__icon fp-collage__icon--diy" src="assets/3d/diy-builder.png" width="192" height="204" alt="" aria-hidden="true">
+                            <div class="fp-collage__chips"><span>内容付费</span><span>直播</span><span>营销</span><span>分销</span><span>装修</span><span>AI 客服</span></div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+        <div class="fp-carousel__progress">
+            <button type="button" class="fp-progress" data-carousel-next aria-label="下一张轮播">
+                <span class="fp-progress__track"><span class="fp-progress__fill"></span></span>
+            </button>
+            <button type="button" class="fp-carousel__pause" data-carousel-pause aria-label="暂停轮播"><i class="el-icon-video-pause" aria-hidden="true"></i></button>
+        </div>
+    </section>
+
+    <section class="fp-highlights" aria-label="产品亮点">
+        <div class="fp-highlights__inner">
+            <article class="fp-highlight">
+                <img class="fp-highlight__icon" src="assets/3d/platform-operation.png" width="310" height="297" alt="" aria-hidden="true">
+                <div>
+                    <strong>多商户商城</strong>
+                    <p>平台自营 + 商户入驻，平台 / 商户 / 移动端三端交易闭环。</p>
+                </div>
+            </article>
+            <article class="fp-highlight">
+                <img class="fp-highlight__icon" src="assets/3d/content-pay.png" width="301" height="310" alt="" aria-hidden="true">
+                <div>
+                    <strong>知识付费</strong>
+                    <p>内容、直播、会员与分销一体化，和商城共用交易底座。</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="fp-compare" id="compare" data-spy="compare">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <p class="fp-heading__eyebrow">版本对比</p>
+                <h2>PHP 免费版 / Java 版 / 企业版 功能对比</h2>
+                <p>PHP 免费版免费使用，Java 版 ¥1388，企业版 ¥5999；三版都包含全部商业功能，差异在技术栈、源码交付与服务。</p>
+            </header>
+            <div class="fp-plans">
+                <article class="fp-plan-card">
+                    <span class="fp-plan-card__label">PHP</span>
+                    <h3>PHP 免费版</h3>
+                    <strong class="fp-plan-card__price">免费使用</strong>
+                    <p class="fp-plan-card__desc">PHP 技术栈，部分功能加密，适合中小型项目快速上线。</p>
+                    <p class="fp-plan-card__meta">全部商业功能 · 永久免费升级</p>
+                </article>
+                <article class="fp-plan-card">
+                    <span class="fp-plan-card__label">Java</span>
+                    <h3>Java 版</h3>
+                    <strong class="fp-plan-card__price">¥1388</strong>
+                    <p class="fp-plan-card__desc">Java 技术栈，商业授权，适合 Java 团队与私有化项目。</p>
+                    <p class="fp-plan-card__meta">全部商业功能 · 永久免费升级</p>
+                </article>
+                <article class="fp-plan-card fp-plan-card--pro">
+                    <span class="fp-plan-card__label">企业版</span>
+                    <h3>企业版</h3>
+                    <strong class="fp-plan-card__price">¥5999</strong>
+                    <p class="fp-plan-card__desc">无加密、完整源码，支持深度二次开发与企业级服务。</p>
+                    <p class="fp-plan-card__meta">全部商业功能 · 深度二开支持</p>
+                </article>
+            </div>
+            <div class="fp-compare__layout">
+                <div class="fp-compare__tabs" role="tablist" aria-label="对比分类">
+                <button type="button" class="fp-compare__tab is-active" id="fp-compare-tab-license" data-compare-tab="license" role="tab" aria-selected="true" aria-controls="fp-compare-panel-license" tabindex="0">
+                    <span class="fp-compare__tab-icon" aria-hidden="true"><i class="el-icon-key"></i></span>
+                    <span class="fp-compare__tab-body"><strong>授权与源码</strong><small>价格、源码、二开</small></span>
+                </button>
+                <button type="button" class="fp-compare__tab" id="fp-compare-tab-features" data-compare-tab="features" role="tab" aria-selected="false" aria-controls="fp-compare-panel-features" tabindex="-1">
+                    <span class="fp-compare__tab-icon" aria-hidden="true"><i class="el-icon-s-grid"></i></span>
+                    <span class="fp-compare__tab-body"><strong>功能范围</strong><small>商业功能、插件、多端</small></span>
+                </button>
+                <button type="button" class="fp-compare__tab" id="fp-compare-tab-deploy" data-compare-tab="deploy" role="tab" aria-selected="false" aria-controls="fp-compare-panel-deploy" tabindex="-1">
+                    <span class="fp-compare__tab-icon" aria-hidden="true"><i class="el-icon-s-platform"></i></span>
+                    <span class="fp-compare__tab-body"><strong>部署与运营</strong><small>独立部署、数据、营销</small></span>
+                </button>
+                <button type="button" class="fp-compare__tab" id="fp-compare-tab-service" data-compare-tab="service" role="tab" aria-selected="false" aria-controls="fp-compare-panel-service" tabindex="-1">
+                    <span class="fp-compare__tab-icon" aria-hidden="true"><i class="el-icon-service"></i></span>
+                    <span class="fp-compare__tab-body"><strong>服务与支持</strong><small>顾问、技术支持、定制</small></span>
+                </button>
+                </div>
+                <div class="fp-compare__main">
+                    <div class="fp-compare__table-wrap">
+                <div class="fp-compare__panel is-active" id="fp-compare-panel-license" data-compare-panel="license" role="tabpanel" aria-labelledby="fp-compare-tab-license">
+                    <table class="fp-compare__table">
+                        <thead><tr><th scope="col">对比项</th><th scope="col">PHP 免费版</th><th scope="col">Java 版</th><th scope="col">企业版</th></tr></thead>
+                        <tbody>
+                        <tr><th scope="row">授权价格</th><td data-label="PHP 免费版">免费使用</td><td data-label="Java 版">¥1388</td><td data-label="企业版">¥5999</td></tr>
+                        <tr><th scope="row">技术栈</th><td data-label="PHP 免费版">PHP</td><td data-label="Java 版">Java</td><td data-label="企业版">PHP / Java 可选</td></tr>
+                        <tr><th scope="row">完整源码交付</th><td data-label="PHP 免费版"><span class="fp-compare__value"><span class="fp-compare__no"><i class="el-icon-close"></i><span class="visually-hidden">不支持</span></span><span class="fp-compare__muted">部分功能加密</span></span></td><td data-label="Java 版"><span class="fp-compare__muted">按版本说明</span></td><td data-label="企业版"><span class="fp-compare__value"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span><span>无加密，完整源码</span></span></td></tr>
+                        <tr><th scope="row">深度二次开发</th><td data-label="PHP 免费版"><span class="fp-compare__muted">开放接口</span></td><td data-label="Java 版"><span class="fp-compare__muted">开放接口</span></td><td data-label="企业版"><span class="fp-compare__value"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span><span>支持深度二开</span></span></td></tr>
+                        <tr><th scope="row">永久免费升级</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="fp-compare__panel" id="fp-compare-panel-features" data-compare-panel="features" role="tabpanel" aria-labelledby="fp-compare-tab-features" aria-hidden="true">
+                    <table class="fp-compare__table">
+                        <thead><tr><th scope="col">对比项</th><th scope="col">PHP 免费版</th><th scope="col">Java 版</th><th scope="col">企业版</th></tr></thead>
+                        <tbody>
+                        <tr><th scope="row">商业授权全部功能</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">会员 / 分销 / 直播 / 内容付费</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">多商户 / 三端互通</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">插件扩展</th><td data-label="PHP 免费版"><span class="fp-compare__muted">按需购买</span></td><td data-label="Java 版"><span class="fp-compare__muted">按需购买</span></td><td data-label="企业版"><span class="fp-compare__muted">按需购买</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="fp-compare__panel" id="fp-compare-panel-deploy" data-compare-panel="deploy" role="tabpanel" aria-labelledby="fp-compare-tab-deploy" aria-hidden="true">
+                    <table class="fp-compare__table">
+                        <thead><tr><th scope="col">对比项</th><th scope="col">PHP 免费版</th><th scope="col">Java 版</th><th scope="col">企业版</th></tr></thead>
+                        <tbody>
+                        <tr><th scope="row">独立部署</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">数据大屏与深度分析</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">全渠道营销工具</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">私有化部署</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="fp-compare__panel" id="fp-compare-panel-service" data-compare-panel="service" role="tabpanel" aria-labelledby="fp-compare-tab-service" aria-hidden="true">
+                    <table class="fp-compare__table">
+                        <thead><tr><th scope="col">对比项</th><th scope="col">PHP 免费版</th><th scope="col">Java 版</th><th scope="col">企业版</th></tr></thead>
+                        <tbody>
+                        <tr><th scope="row">一对一专属顾问</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">7×12 小时技术支持</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        <tr><th scope="row">定制 UI / 功能</th><td data-label="PHP 免费版"><span class="fp-compare__muted">按需报价</span></td><td data-label="Java 版"><span class="fp-compare__muted">按需报价</span></td><td data-label="企业版">定制支持</td></tr>
+                        <tr><th scope="row">长期版本升级</th><td data-label="PHP 免费版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="Java 版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td><td data-label="企业版"><span class="fp-compare__yes"><i class="el-icon-check"></i><span class="visually-hidden">支持</span></span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                    </div>
+                    <div class="fp-compare__foot">
+                        <p>更多业务对比可咨询我们的客服专员 <i class="el-icon-right" aria-hidden="true"></i></p>
+                        <a class="fp-btn fp-btn--primary" href="#contact">客服咨询</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="fp-section fp-section--tint" id="platform" data-spy="platform">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>平台运营，一处管控全局</h2>
+                <p>商户、内容、直播、财务与权限，在一个后台统一管理。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">从商户入驻、内容审核到订单、退款和财务结算，平台端把关键经营动作收在同一处，权限和操作日志可追溯。</p>
+                        <span class="fp-spotlight__meta">商户审核 · 内容风控 · 财务结算 · 权限管理</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>商户入驻、审核、营业状态与推荐排序</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>内容审核、敏感词、直播与评论风控</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>订单、退款、财务账单、佣金与提现</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>角色权限、菜单、系统配置与操作日志</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-visual fp-visual--platform">
+                            <img class="fp-visual__icon" src="assets/3d/platform-operation.png" width="310" height="297" alt="" aria-hidden="true">
+                            <h3 class="fp-visual__title">平台运营</h3>
+                            <p class="fp-visual__desc">商户审核 · 内容风控 · 财务结算 · 权限管理</p>
+                            <div class="fp-visual__chips">
+                                <span>首页</span>
+                                <span>内容</span>
+                                <span>商户</span>
+                                <span>渠道</span>
+                                <span>直播</span>
+                                <span>用户</span>
+                                <span>装修</span>
+                                <span>订单</span>
+                                <span>客服</span>
+                                <span>财务</span>
+                                <span>营销</span>
+                                <span>分销</span>
+                                <span>设置</span>
+                            </div>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+    <section class="fp-section fp-section--reverse" id="merchant" data-spy="merchant">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>商户独立经营，从入驻到结算</h2>
+                <p>店铺、商品、订单、直播与优惠券，商户在自己的工作台完成经营闭环。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">商户可以独立管理店铺、商品和订单，也可以用平台共享商品快速上架；资金流水与提现统一结算。</p>
+                        <span class="fp-spotlight__meta">入驻 · 店铺 · 商品 · 订单</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>店铺设置、管理员、角色与营业状态</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>商品库、店铺商品、SKU、订单与退款</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>优惠券、直播、内容与客服会话</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>资金流水、提现与结算</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-visual fp-visual--merchant">
+                            <img class="fp-visual__icon" src="assets/3d/merchant-store.png" width="300" height="283" alt="" aria-hidden="true">
+                            <h3 class="fp-visual__title">商户经营</h3>
+                            <p class="fp-visual__desc">入驻 · 店铺 · 商品 · 订单 · 结算</p>
+                            <div class="fp-visual__chips">
+                                <span>首页</span>
+                                <span>内容</span>
+                                <span>直播</span>
+                                <span>店铺</span>
+                                <span>客服</span>
+                                <span>订单</span>
+                                <span>优惠券</span>
+                                <span>财务</span>
+                            </div>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+    <section class="fp-section fp-section--tint" id="mobile" data-spy="mobile">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>三端一致，用户随时交易</h2>
+                <p>H5、小程序、App 共用一套页面和交易流程，内容、直播、下单、售后全程打通。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">移动端承担用户从浏览、学习、互动到下单支付的完整路径，首页支持动态装修，会员和资产随账号同步。</p>
+                        <span class="fp-spotlight__meta">H5 · 小程序 · App</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>H5 / 小程序 / App 共用一套页面与交易流程</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>首页、分类、购物车、个人中心</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>内容学习、直播互动、下单支付、订单售后</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>会员、积分、优惠券、分销与客服</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-phones">
+                            <div class="fp-phone fp-phone--left"><img src="assets/screenshots/member-vip.webp" alt="移动端会员中心" width="750" height="1631"></div>
+                            <div class="fp-phone fp-phone--main"><img src="assets/screenshots/home.webp" alt="移动端首页" width="750" height="1625"></div>
+                            <div class="fp-phone fp-phone--right"><img src="assets/screenshots/category.png" alt="移动端分类页面" width="856" height="1862"></div>
+                            <span class="fp-phones__badge">H5 / 小程序 / App</span>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+<div class="fp-product" id="product" data-spy="product">
+    <section class="fp-section" id="content" data-spy="content">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>内容付费 + 直播互动</h2>
+                <p>图文、音频、视频、小说与直播共用一套会员、交易和营销体系。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">从内容发布、试看试听，到直播间挂载商品、礼物打赏和回放，内容与交易在同一条链路上完成。</p>
+                        <span class="fp-spotlight__meta">图文 · 音频 · 视频 · 小说 · 直播</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>图文、音频、视频、小说、专题课程与课程合集</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>试看试听、收藏、评论、全局搜索与购买记录</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>直播间商品挂载、礼物打赏、排行榜与回放</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>内容与商品共用会员、订单、优惠券与分销体系</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-phones fp-phones--duo">
+                            <div class="fp-phone fp-phone--left"><img src="assets/screenshots/content-detail.jpg" alt="内容详情页" width="750" height="1635"></div>
+                            <div class="fp-phone fp-phone--main"><img src="assets/screenshots/audio-detail.webp" alt="音频详情页" width="862" height="1860"></div>
+                            <img class="fp-phones__float" src="assets/3d/live-commerce.png" width="314" height="268" alt="" aria-hidden="true">
+                            <span class="fp-phones__badge">图文 / 音频 / 视频 / 直播</span>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+    <section class="fp-section fp-section--tint fp-section--reverse" id="marketing" data-spy="marketing">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>营销与分销，把增长做进系统</h2>
+                <p>优惠券、积分签到、会员权益与分销佣金，围绕同一批用户和订单运转。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">从拉新、转化到复购和分销裂变，营销工具与订单、会员、资产打通，不需要再单独接一套系统。</p>
+                        <span class="fp-spotlight__meta">优惠券 · 积分 · 会员 · 分销</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>优惠券、积分签到、会员 VIP、拼团秒杀</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>分销员、佣金、提现与上下级关系</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>平台券 / 店铺券、多商户分账与结算</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>短信、公众号、小程序、企微 / 钉钉消息触达</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-phones fp-phones--duo">
+                            <div class="fp-phone fp-phone--left"><img src="assets/screenshots/coupon-center.jpg" alt="领券中心" width="750" height="1622"></div>
+                            <div class="fp-phone fp-phone--main"><img src="assets/screenshots/points.webp" alt="积分中心" width="750" height="1646"></div>
+                            <img class="fp-phones__float" src="assets/3d/member-distribution.png" width="298" height="287" alt="" aria-hidden="true">
+                            <span class="fp-phones__badge">优惠券 / 积分 / 会员 / 分销</span>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+    <section class="fp-section" id="order" data-spy="order">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>商品与订单，从下单到售后</h2>
+                <p>购物车、确认订单、支付、退款与评价，覆盖完整交易链路。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">商品、优惠券、积分抵扣和运费模板在同一套订单模型里计算，支付、退款、评价和售后状态可追踪。</p>
+                        <span class="fp-spotlight__meta">购物车 · 订单 · 支付 · 售后</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>购物车、确认订单、收银台与支付结果</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>订单列表、订单详情、订单评价</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>申请退款、退款列表、退款详情</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>商品、优惠券、积分抵扣与运费模板</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-phones">
+                            <div class="fp-phone fp-phone--left"><img src="assets/screenshots/cart.png" alt="购物车" width="864" height="1858"></div>
+                            <div class="fp-phone fp-phone--main"><img src="assets/screenshots/confirm-order.png" alt="确认订单" width="858" height="1864"></div>
+                            <div class="fp-phone fp-phone--right"><img src="assets/screenshots/order-detail.jpg" alt="订单详情" width="750" height="1611"></div>
+                            <img class="fp-phones__float" src="assets/3d/payment-loop.png" width="310" height="297" alt="" aria-hidden="true">
+                            <span class="fp-phones__badge">购物车 / 订单 / 支付 / 售后</span>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+    <section class="fp-section fp-section--tint fp-section--reverse" id="member" data-spy="member">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>会员与资产，把复购留在站内</h2>
+                <p>会员 VIP、积分、余额、金币与佣金，在同一套资产体系里流转。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">会员权益、积分签到、余额充值和分销佣金共用一套账户与资产记录，复购和裂变都沉淀在站内。</p>
+                        <span class="fp-spotlight__meta">会员 VIP · 积分 · 余额 · 佣金</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>会员套餐、权益、折扣与积分倍数</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>余额充值、积分、金币、经验与资产记录</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>收货地址、银行卡、我的收藏与足迹</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>分销佣金、提现与上下级关系</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-phones">
+                            <div class="fp-phone fp-phone--left"><img src="assets/screenshots/member-vip.webp" alt="会员中心" width="750" height="1631"></div>
+                            <div class="fp-phone fp-phone--main"><img src="assets/screenshots/points.webp" alt="积分中心" width="750" height="1646"></div>
+                            <div class="fp-phone fp-phone--right"><img src="assets/screenshots/personal-center.jpg" alt="个人中心" width="750" height="1618"></div>
+                            <img class="fp-phones__float" src="assets/3d/member-distribution.png" width="298" height="287" alt="" aria-hidden="true">
+                            <span class="fp-phones__badge">会员 VIP / 积分 / 余额 / 佣金</span>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+    <section class="fp-section" id="tools" data-spy="tools">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>装修与 AI 客服，运营更轻</h2>
+                <p>可视化页面装修、个人中心装修，加上 AI 客服与知识库，把重复运营交给系统。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">页面、组件、链接和移动端组件数据统一管理；客服侧从会话、话术到知识库、QA 和向量化检索，形成完整闭环。</p>
+                        <span class="fp-spotlight__meta">页面装修 · 个人中心 · AI 客服</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>可视化页面装修、个人中心装修、页面预览</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>页面链接、组件数据聚合与多端适配</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>AI 客服、知识库、话术、QA 与批量向量化</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>AI 模型配置、测试回复与客服会话</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-visual fp-visual--tools">
+                            <div class="fp-visual__icons">
+                                <img src="assets/3d/diy-builder.png" width="192" height="204" alt="" aria-hidden="true">
+                                <img src="assets/3d/ai-service.png" width="233" height="210" alt="" aria-hidden="true">
+                            </div>
+                            <h3 class="fp-visual__title">装修 + AI 客服</h3>
+                            <p class="fp-visual__desc">页面装修、个人中心、链接管理与 AI 客服知识库，统一在一个后台维护。</p>
+                            <div class="fp-visual__chips">
+                                <span>页面装修</span>
+                                <span>个人中心</span>
+                                <span>链接管理</span>
+                                <span>AI 客服</span>
+                                <span>知识库</span>
+                                <span>QA</span>
+                            </div>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+    <section class="fp-section fp-section--tint" id="plugin" data-spy="plugin">
+        <div class="fp-container">
+            <header class="fp-heading">
+                <h2>插件与扩展，按需生长</h2>
+                <p>核心功能开箱即用，插件按需扩展，AI 能力持续接入。</p>
+            </header>
+            <div class="fp-section__body">
+                <div class="fp-section__content">
+                    <div class="fp-spotlight">
+                        <p class="fp-spotlight__lead">核心系统保持轻量，行业能力通过插件市场扩展；开放接口和 MCP 让商城能力可以被外部系统和 AI Agent 调用。</p>
+                        <span class="fp-spotlight__meta">插件市场 · 开放接口 · AI 能力</span>
+                        <ul class="fp-bullets">
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>插件市场、插件安装与商业授权</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>开放接口、MCP 与第三方系统对接</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>AI 模型配置、内容润色、AI 生图</li>
+                            <li><span class="fp-bullet__icon" aria-hidden="true"><i class="el-icon-check"></i></span>消息推送、Webhook 与多端触达</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="fp-section__visual">
+                        <div class="fp-visual fp-visual--plugin">
+                            <div class="fp-visual__icons">
+                                <img src="assets/3d/ai-service.png" width="233" height="210" alt="" aria-hidden="true">
+                                <img src="assets/3d/live-commerce.png" width="314" height="268" alt="" aria-hidden="true">
+                                <img src="assets/3d/diy-builder.png" width="192" height="204" alt="" aria-hidden="true">
+                            </div>
+                            <h3 class="fp-visual__title">插件与扩展</h3>
+                            <p class="fp-visual__desc">插件市场、开放接口与 AI 能力，按业务需要逐步接入。</p>
+                            <div class="fp-visual__chips">
+                                <span>插件市场</span>
+                                <span>开放接口</span>
+                                <span>AI 模型</span>
+                                <span>消息推送</span>
+                                <span>DIY 组件</span>
+                            </div>
+                        </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+</div>
+
+    <p class="fp-foot">
+        产品能力持续迭代
+        <span aria-hidden="true">/</span>
+        <a href="/plugins">插件市场</a>
+        <span aria-hidden="true">/</span>
+        <a href="/pricing">价格方案</a>
+    </p>
+</main>
+
+<footer class="site-footer">
+    <section class="site-footer-cta" id="contact">
+        <div class="site-container site-footer-cta__inner">
+            <img
+                class="site-footer-cta__title"
+                src="assets/footer/cta-title-cropped.png"
+                alt="开启数字化增长新未来"
+            >
+            <p class="site-footer-cta__desc">选择适合您的版本，让专业的工具助力企业更快、更高效地成长</p>
+            <a class="site-footer-cta__button" href="javascript:void(0)" id="site-footer-consult">
+                <span>立即咨询</span>
+                <i class="el-icon-right" aria-hidden="true"></i>
+            </a>
+
+            <div class="site-footer-cta__features" aria-label="服务保障">
+                                    <article class="site-footer-feature site-footer-feature--security">
+                        <span class="site-footer-feature__icon" aria-hidden="true"></span>
+                        <div>
+                            <h3>安全可靠</h3>
+                            <p>数据安全有保障</p>
+                        </div>
+                    </article>
+                                    <article class="site-footer-feature site-footer-feature--service">
+                        <span class="site-footer-feature__icon" aria-hidden="true"></span>
+                        <div>
+                            <h3>专业服务</h3>
+                            <p>7x12小时技术支持</p>
+                        </div>
+                    </article>
+                                    <article class="site-footer-feature site-footer-feature--growth">
+                        <span class="site-footer-feature__icon" aria-hidden="true"></span>
+                        <div>
+                            <h3>持续优化</h3>
+                            <p>与您共同成长</p>
+                        </div>
+                    </article>
+                            </div>
+        </div>
+    </section>
+
+    <div class="site-footer-main">
+        <div class="site-container">
+            <div class="site-footer-main__grid">
+                <div class="site-footer-brand">
+                    <div class="site-footer-brand__head">
+                        <img src="assets/logo.png" alt="">
+                        <strong>乖乖兔</strong>
+                    </div>
+                    <p>乖乖兔多商户平台系统框架</p>
+                    <div class="site-footer-socials" aria-label="社交媒体">
+                                                    <a
+                                class="site-footer-social site-footer-social--wechat"
+                                href="javascript:void(0)"
+                                aria-label="微信"
+                            >
+                                <span aria-hidden="true"></span>
+                            </a>
+                                                    <a
+                                class="site-footer-social site-footer-social--weibo"
+                                href="javascript:void(0)"
+                                aria-label="微博"
+                            >
+                                <span aria-hidden="true"></span>
+                            </a>
+                                                    <a
+                                class="site-footer-social site-footer-social--linkedin"
+                                href="javascript:void(0)"
+                                aria-label="LinkedIn"
+                            >
+                                <span aria-hidden="true"></span>
+                            </a>
+                                            </div>
+                </div>
+
+                                    <nav class="site-footer-column" aria-label="产品与服务">
+                        <h3>产品与服务</h3>
+                                                    <a href="/pricing">
+                                商业授权版本                            </a>
+                                                    <a href="/pricing">
+                                企业版本                            </a>
+                                                    <a href="/#contact">
+                                定制报价                            </a>
+                                            </nav>
+                                    <nav class="site-footer-column" aria-label="支持与帮助">
+                        <h3>支持与帮助</h3>
+                                                    <a href="/#contact">
+                                帮助中心                            </a>
+                                                    <a href="/#contact">
+                                技术文档                            </a>
+                                                    <a href="/#contact">
+                                联系我们                            </a>
+                                            </nav>
+                                    <nav class="site-footer-column" aria-label="关于我们">
+                        <h3>关于我们</h3>
+                                                    <a href="/about">
+                                公司介绍                            </a>
+                                                    <a href="/about">
+                                新闻动态                            </a>
+                                                    <a href="/about">
+                                加入我们                            </a>
+                                            </nav>
+                
+                <div class="site-footer-contacts" aria-label="联系方式">
+                                            <div class="site-footer-contact site-footer-contact--phone">
+                            <span class="site-footer-contact__icon" aria-hidden="true"></span>
+                            <span>17349395805</span>
+                        </div>
+                                            <div class="site-footer-contact site-footer-contact--email">
+                            <span class="site-footer-contact__icon" aria-hidden="true"></span>
+                            <span>17349395805@163.com</span>
+                        </div>
+                                            <div class="site-footer-contact site-footer-contact--address">
+                            <span class="site-footer-contact__icon" aria-hidden="true"></span>
+                            <span>陕西省西安市未央区太华北路3500号保利中央公园</span>
+                        </div>
+                                    </div>
+            </div>
+
+            <div class="site-footer-copyright">
+                <span>&copy; 2026 乖乖兔. All rights reserved.</span>
+                <i aria-hidden="true"></i>
+                <a href="javascript:void(0)">陕ICP备2026006843号-1</a>
+                <i aria-hidden="true"></i>
+                <a href="javascript:void(0)">隐私政策</a>
+                <i aria-hidden="true"></i>
+                <a href="javascript:void(0)">服务条款</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="site-consult-overlay" id="site-consult-overlay" aria-hidden="true">
+        <div class="site-consult-overlay__mask" data-consult-close></div>
+        <div class="site-consult-box" role="dialog" aria-modal="true" aria-label="联系客服">
+            <button class="site-consult-box__close" type="button" aria-label="关闭" data-consult-close>×</button>
+            <h3>联系客服</h3>
+            <p class="site-consult-box__title">拨打服务热线，获取产品资料与报价方案</p>
+            <div class="site-consult-box__phone">
+                <i class="el-icon-phone-outline" aria-hidden="true"></i>
+                <a href="tel:17349395805">
+                    17349395805                </a>
+                <span>专属客服为您服务</span>
+            </div>
+            <p class="site-consult-box__tip">点击手机号可直接拨打咨询</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+(function () {
+    'use strict';
+
+    /* 顶部轮播 */
+    var carousel = document.querySelector('[data-carousel]');
+    if (carousel) {
+        var slides = Array.prototype.slice.call(carousel.querySelectorAll('[data-slide]'));
+        var progress = carousel.querySelector('.fp-carousel__progress');
+        var progressFill = carousel.querySelector('.fp-progress__fill');
+        var progressBtn = carousel.querySelector('[data-carousel-next]');
+        var pauseBtn = carousel.querySelector('[data-carousel-pause]');
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var userPaused = false;
+        var current = 0;
+        var timer = null;
+
+        function go(index, userAction) {
+            current = (index + slides.length) % slides.length;
+            slides.forEach(function (slide, i) {
+                var active = i === current;
+                slide.classList.toggle('is-active', active);
+                if (active) {
+                    slide.removeAttribute('inert');
+                    slide.setAttribute('aria-hidden', 'false');
+                } else {
+                    slide.setAttribute('inert', '');
+                    slide.setAttribute('aria-hidden', 'true');
+                }
+            });
+            if (progressFill) {
+                progressFill.style.animation = 'none';
+                void progressFill.offsetWidth;
+                progressFill.style.animation = '';
+            }
+            if (userAction) {
+                restart();
+            }
+        }
+
+        function stop() {
+            if (timer) {
+                window.clearInterval(timer);
+                timer = null;
+            }
+            if (progress) {
+                progress.classList.add('is-paused');
+            }
+        }
+
+        function start() {
+            if (reduceMotion || userPaused || timer) {
+                return;
+            }
+            if (progress) {
+                progress.classList.remove('is-paused');
+            }
+            if (progressFill) {
+                progressFill.style.animation = 'none';
+                void progressFill.offsetWidth;
+                progressFill.style.animation = '';
+            }
+            timer = window.setInterval(function () {
+                go(current + 1, false);
+            }, 7000);
+        }
+
+        function restart() {
+            stop();
+            start();
+        }
+
+        if (progressBtn) {
+            progressBtn.addEventListener('click', function () { go(current + 1, true); });
+        }
+        if (pauseBtn) {
+            if (reduceMotion) {
+                pauseBtn.hidden = true;
+            }
+            pauseBtn.addEventListener('click', function () {
+                userPaused = !userPaused;
+                if (userPaused) {
+                    stop();
+                    pauseBtn.innerHTML = '<i class="el-icon-video-play" aria-hidden="true"></i>';
+                    pauseBtn.setAttribute('aria-label', '播放轮播');
+                } else {
+                    start();
+                    pauseBtn.innerHTML = '<i class="el-icon-video-pause" aria-hidden="true"></i>';
+                    pauseBtn.setAttribute('aria-label', '暂停轮播');
+                }
+            });
+        }
+        carousel.addEventListener('keydown', function (event) {
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                go(current - 1, true);
+            } else if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                go(current + 1, true);
+            }
+        });
+        carousel.addEventListener('mouseenter', stop);
+        carousel.addEventListener('mouseleave', start);
+        carousel.addEventListener('focusin', stop);
+        carousel.addEventListener('focusout', start);
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                stop();
+            } else {
+                start();
+            }
+        });
+        go(0, false);
+        start();
+    }
+
+    /* 版本对比 Tab */
+    var compareTabs = Array.prototype.slice.call(document.querySelectorAll('[data-compare-tab]'));
+    var comparePanels = Array.prototype.slice.call(document.querySelectorAll('[data-compare-panel]'));
+
+    function activateCompare(key, focus) {
+        compareTabs.forEach(function (tab) {
+            var active = tab.getAttribute('data-compare-tab') === key;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+            tab.setAttribute('tabindex', active ? '0' : '-1');
+            if (active && focus) {
+                tab.focus();
+            }
+        });
+        comparePanels.forEach(function (panel) {
+            var active = panel.getAttribute('data-compare-panel') === key;
+            panel.classList.toggle('is-active', active);
+            if (active) {
+                panel.removeAttribute('aria-hidden');
+            } else {
+                panel.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
+
+    compareTabs.forEach(function (tab, index) {
+        tab.addEventListener('click', function () {
+            activateCompare(tab.getAttribute('data-compare-tab'), false);
+        });
+        tab.addEventListener('keydown', function (event) {
+            var offset = 0;
+            if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                offset = 1;
+            } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                offset = -1;
+            } else if (event.key === 'Home') {
+                event.preventDefault();
+                activateCompare(compareTabs[0].getAttribute('data-compare-tab'), true);
+                return;
+            } else if (event.key === 'End') {
+                event.preventDefault();
+                var last = compareTabs[compareTabs.length - 1];
+                activateCompare(last.getAttribute('data-compare-tab'), true);
+                return;
+            }
+            if (!offset) {
+                return;
+            }
+            event.preventDefault();
+            var nextTab = compareTabs[(index + offset + compareTabs.length) % compareTabs.length];
+            activateCompare(nextTab.getAttribute('data-compare-tab'), true);
+        });
+    });
+}());
+</script>
+</body>
+</html>

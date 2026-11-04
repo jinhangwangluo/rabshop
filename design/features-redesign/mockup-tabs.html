@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>功能清单 - 乖乖兔多商户平台系统框架</title>
+    <link rel="stylesheet" href="assets/element-ui/index.css">
+    <link rel="stylesheet" href="assets/site.css">
+    <link rel="stylesheet" href="assets/market.css">
+    <link rel="stylesheet" href="assets/features-tabs.css">
+</head>
+<body class="page-features">
+<header class="site-header">
+    <div class="site-container site-header__inner">
+        <a class="site-brand" href="/" aria-label="乖乖兔">
+            <img class="site-brand__logo" src="assets/logo.png" alt="">
+            <span class="site-brand__text">乖乖兔</span>
+        </a>
+
+        <button class="site-nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span class="visually-hidden">展开导航</span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="主导航">
+                                            <a
+                    class="site-nav__link"
+                    href="/"
+                >
+                    首页                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/features"
+                >
+                    产品功能                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/plugins"
+                >
+                    插件市场                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/#tech"
+                >
+                    框架技术                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/pricing"
+                >
+                    价格方案                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/#contact"
+                >
+                    服务支持                </a>
+                                            <a
+                    class="site-nav__link"
+                    href="/about"
+                >
+                    关于我们                </a>
+                    </nav>
+
+        <div class="site-header__auth">
+            <a class="site-header__register" href="javascript:void(0)" id="site-login-open">登录/注册</a>
+        </div>
+    </div>
+</header>
+
+<main class="site-main">
+    <section class="features-hero">
+        <div class="features-hero__inner">
+            <div class="features-hero__copy">
+                <p class="features-hero__kicker">产品功能清单</p>
+                <h1 class="features-hero__title">三端功能，<span>一次看清</span></h1>
+                <p class="features-hero__desc"><span class="features-hero__clause">平台统一管控、</span><span class="features-hero__clause">商户自主经营、</span><span class="features-hero__clause">用户随时交易。</span><br><span class="features-hero__clause">按端分类呈现 <strong>31</strong> 个功能模块、</span><span class="features-hero__clause"><strong>142</strong> 项功能点，</span><span class="features-hero__clause">快速了解系统能力边界。</span></p>
+                <ul class="features-hero__points">
+                    <li>平台统一管控</li>
+                    <li>商户独立经营</li>
+                    <li>用户随时交易</li>
+                </ul>
+                <div class="features-hero__actions">
+                    <a class="features-btn features-btn--primary" href="#features-toolbar" data-feature-browse>浏览功能清单 <i class="el-icon-right" aria-hidden="true"></i></a>
+                    <a class="features-btn features-btn--ghost" href="/pricing">查看价格方案</a>
+                </div>
+            </div>
+
+            <div class="features-hero__visual">
+                <div class="features-hero__rings" aria-hidden="true">
+                    <span class="features-hero__ring features-hero__ring--one"></span>
+                    <span class="features-hero__ring features-hero__ring--two"></span>
+                    <span class="features-hero__ring features-hero__ring--three"></span>
+                </div>
+                <img class="features-float features-float--platform" src="assets/3d/platform-operation.png" alt="" aria-hidden="true">
+                <img class="features-float features-float--merchant" src="assets/3d/merchant-store.png" alt="" aria-hidden="true">
+
+                <div class="features-glance">
+                    <div class="features-glance__head">
+                        <span>三端能力总览</span>
+                        <span class="features-glance__total">31 模块 / 142 项</span>
+                    </div>
+            <button type="button" class="features-glance__row is-current" data-feature-jump="platform" aria-label="查看平台端功能清单">
+                <span class="features-glance__icon features-glance__icon--platform" aria-hidden="true"><i class="el-icon-monitor"></i></span>
+                <span class="features-glance__body"><strong>平台端</strong><small>统一管控 · 审核 · 风控</small></span>
+                <span class="features-glance__meta"><span><strong>13</strong> 模块</span><span><strong>66</strong> 项</span></span>
+                <i class="el-icon-arrow-right features-glance__arrow" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="features-glance__row" data-feature-jump="merchant" aria-label="查看商户端功能清单">
+                <span class="features-glance__icon features-glance__icon--merchant" aria-hidden="true"><i class="el-icon-s-shop"></i></span>
+                <span class="features-glance__body"><strong>商户端</strong><small>入驻 · 店铺 · 订单管理</small></span>
+                <span class="features-glance__meta"><span><strong>8</strong> 模块</span><span><strong>25</strong> 项</span></span>
+                <i class="el-icon-arrow-right features-glance__arrow" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="features-glance__row" data-feature-jump="mobile" aria-label="查看移动端功能清单">
+                <span class="features-glance__icon features-glance__icon--mobile" aria-hidden="true"><i class="el-icon-mobile-phone"></i></span>
+                <span class="features-glance__body"><strong>移动端</strong><small>H5 · 小程序 · App</small></span>
+                <span class="features-glance__meta"><span><strong>10</strong> 模块</span><span><strong>51</strong> 项</span></span>
+                <i class="el-icon-arrow-right features-glance__arrow" aria-hidden="true"></i>
+            </button>
+                    <p class="features-glance__foot">点击任意一端，快速定位功能清单</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="features-toolbar" id="features-toolbar">
+        <div class="features-toolbar__inner">
+            <div class="features-tabs" role="tablist" aria-label="三端功能切换">
+            <button type="button" class="features-tab is-active" id="features-tab-platform" data-feature-tab="platform" role="tab" aria-selected="true" aria-controls="features-panel-platform" tabindex="0">
+                <span class="features-tab__label">平台端</span>
+                <span class="features-tab__count">66</span>
+            </button>
+            <button type="button" class="features-tab" id="features-tab-merchant" data-feature-tab="merchant" role="tab" aria-selected="false" aria-controls="features-panel-merchant" tabindex="-1">
+                <span class="features-tab__label">商户端</span>
+                <span class="features-tab__count">25</span>
+            </button>
+            <button type="button" class="features-tab" id="features-tab-mobile" data-feature-tab="mobile" role="tab" aria-selected="false" aria-controls="features-panel-mobile" tabindex="-1">
+                <span class="features-tab__label">移动端</span>
+                <span class="features-tab__count">51</span>
+            </button>
+            </div>
+            <div class="features-search">
+                <label class="visually-hidden" for="features-search-input">搜索当前端功能</label>
+                <i class="features-search__icon el-icon-search" aria-hidden="true"></i>
+                <input id="features-search-input" type="search" data-feature-search placeholder="搜索功能，如 直播 / 优惠券">
+                <button type="button" class="features-search__clear" data-feature-clear hidden aria-label="清空搜索">
+                    <i class="el-icon-close" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="features-content">
+        <p class="features-search-status" data-feature-status aria-live="polite" hidden></p>
+    <section class="features-panel features-panel--platform is-active" id="features-panel-platform" data-feature-panel="platform" role="tabpanel" aria-labelledby="features-tab-platform">
+        <div class="features-panel__head">
+            <div>
+                <h2 class="features-panel__title">平台端</h2>
+                <p class="features-panel__desc">平台统一管控 · 商户审核 · 内容风控 · 财务结算</p>
+            </div>
+            <p class="features-panel__meta"><strong>13</strong> 个模块<span class="features-panel__sep">/</span><strong>66</strong> 项功能</p>
+        </div>
+        <div class="features-cards">
+        <article class="feature-card" style="--card-i: 0">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-s-home"></i></span>
+                <h3 class="feature-card__title">首页</h3>
+                <span class="feature-card__count">1 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">工作台数据总览</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 1">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-document"></i></span>
+                <h3 class="feature-card__title">内容</h3>
+                <span class="feature-card__count">8 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">内容列表</span>
+                <span class="feature-chip">内容分类</span>
+                <span class="feature-chip">添加内容</span>
+                <span class="feature-chip">专题列表</span>
+                <span class="feature-chip">添加专题</span>
+                <span class="feature-chip">专题分类</span>
+                <span class="feature-chip">评论管理</span>
+                <span class="feature-chip">标签管理</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 2">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-office-building"></i></span>
+                <h3 class="feature-card__title">商户</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">商户列表</span>
+                <span class="feature-chip">入驻申请</span>
+                <span class="feature-chip">提现管理</span>
+                <span class="feature-chip">菜单管理</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 3">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-connection"></i></span>
+                <h3 class="feature-card__title">渠道</h3>
+                <span class="feature-card__count">6 项</span>
+            </header>
+            <div class="feature-card__body">
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">微信管理</span>
+                    <span class="feature-chip">服务号菜单</span>
+                    <span class="feature-chip">关键字回复</span>
+                    <span class="feature-chip">关注回复</span>
+                    <span class="feature-chip">无效关键字回复</span>
+                    <span class="feature-chip">服务号配置</span>
+                </div>
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">小程序</span>
+                    <span class="feature-chip">小程序配置</span>
+                </div>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 4">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-video-camera-solid"></i></span>
+                <h3 class="feature-card__title">直播</h3>
+                <span class="feature-card__count">8 项</span>
+            </header>
+            <div class="feature-card__body">
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">直播间管理</span>
+                    <span class="feature-chip">直播间贡献榜</span>
+                </div>
+                <span class="feature-chip">创建直播间</span>
+                <span class="feature-chip">主播管理</span>
+                <span class="feature-chip">礼物管理</span>
+                <span class="feature-chip">直播配置</span>
+                <span class="feature-chip">直播订单统计</span>
+                <span class="feature-chip">直播分类</span>
+                <span class="feature-chip">等级配置</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 5">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-user"></i></span>
+                <h3 class="feature-card__title">用户</h3>
+                <span class="feature-card__count">2 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">用户管理</span>
+                <span class="feature-chip">会员配置</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 6">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-magic-stick"></i></span>
+                <h3 class="feature-card__title">装修</h3>
+                <span class="feature-card__count">3 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">页面装修</span>
+                <span class="feature-chip">页面链接</span>
+                <span class="feature-chip">个人中心装修</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 7">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-s-order"></i></span>
+                <h3 class="feature-card__title">订单</h3>
+                <span class="feature-card__count">2 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">订单列表</span>
+                <span class="feature-chip">退款订单</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 8">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-service"></i></span>
+                <h3 class="feature-card__title">客服</h3>
+                <span class="feature-card__count">5 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">会话管理</span>
+                <span class="feature-chip">知识库管理</span>
+                <span class="feature-chip">话术管理</span>
+                <span class="feature-chip">客服人员</span>
+                <span class="feature-chip">AI模型配置</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 0">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-wallet"></i></span>
+                <h3 class="feature-card__title">财务</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">提现申请</span>
+                <span class="feature-chip">用户充值</span>
+                <span class="feature-chip">财务账单</span>
+                <span class="feature-chip">佣金提现</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 1">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-present"></i></span>
+                <h3 class="feature-card__title">营销</h3>
+                <span class="feature-card__count">6 项</span>
+            </header>
+            <div class="feature-card__body">
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">优惠券</span>
+                    <span class="feature-chip">优惠券列表</span>
+                    <span class="feature-chip">创建优惠券</span>
+                    <span class="feature-chip">编辑优惠券</span>
+                    <span class="feature-chip">领取记录</span>
+                </div>
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">积分</span>
+                    <span class="feature-chip">积分设置</span>
+                    <span class="feature-chip">签到设置</span>
+                </div>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 2">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-share"></i></span>
+                <h3 class="feature-card__title">分销</h3>
+                <span class="feature-card__count">2 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">分销配置</span>
+                <span class="feature-chip">分销员列表</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 3">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-setting"></i></span>
+                <h3 class="feature-card__title">设置</h3>
+                <span class="feature-card__count">15 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">角色管理</span>
+                <span class="feature-chip">权限配置</span>
+                <span class="feature-chip">系统配置</span>
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">系统维护</span>
+                    <span class="feature-chip">菜单管理</span>
+                    <span class="feature-chip">网站日志</span>
+                    <span class="feature-chip">配置管理</span>
+                    <span class="feature-chip">敏感词管理</span>
+                    <span class="feature-chip">地址管理</span>
+                    <span class="feature-chip">组合数据</span>
+                </div>
+                <span class="feature-chip">支付配置</span>
+                <span class="feature-chip">协议管理</span>
+                <span class="feature-chip">消息推送</span>
+                <span class="feature-chip">关于我们</span>
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">附件管理</span>
+                    <span class="feature-chip">附件管理</span>
+                    <span class="feature-chip">水印配置</span>
+                </div>
+            </div>
+        </article>
+        </div>
+        <div class="features-empty" data-feature-empty>
+            <span class="features-empty__icon" aria-hidden="true"><i class="el-icon-search"></i></span>
+            <h3>没有找到相关功能</h3>
+            <p>换个关键词试试，或切换其他端查看。</p>
+        </div>
+    </section>
+    <section class="features-panel features-panel--merchant" id="features-panel-merchant" data-feature-panel="merchant" role="tabpanel" aria-labelledby="features-tab-merchant">
+        <div class="features-panel__head">
+            <div>
+                <h2 class="features-panel__title">商户端</h2>
+                <p class="features-panel__desc">灵活入驻 · 独立管理 · 自主经营 · 多元盈利</p>
+            </div>
+            <p class="features-panel__meta"><strong>8</strong> 个模块<span class="features-panel__sep">/</span><strong>25</strong> 项功能</p>
+        </div>
+        <div class="features-cards">
+        <article class="feature-card" style="--card-i: 0">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-s-home"></i></span>
+                <h3 class="feature-card__title">首页</h3>
+                <span class="feature-card__count">1 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">工作台数据总览</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 1">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-document"></i></span>
+                <h3 class="feature-card__title">内容</h3>
+                <span class="feature-card__count">3 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">专题列表</span>
+                <span class="feature-chip">内容列表</span>
+                <span class="feature-chip">标签管理</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 2">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-video-camera-solid"></i></span>
+                <h3 class="feature-card__title">直播</h3>
+                <span class="feature-card__count">5 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">创建直播间</span>
+                <span class="feature-chip">直播订单统计</span>
+                <span class="feature-chip">主播管理</span>
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">直播间管理</span>
+                    <span class="feature-chip">直播间贡献榜</span>
+                    <span class="feature-chip">直播控制台</span>
+                </div>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 3">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-s-grid"></i></span>
+                <h3 class="feature-card__title">店铺</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">店铺设置</span>
+                <span class="feature-chip">管理员</span>
+                <span class="feature-chip">角色管理</span>
+                <span class="feature-chip">网站日志</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 4">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-service"></i></span>
+                <h3 class="feature-card__title">客服</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">会话管理</span>
+                <span class="feature-chip">知识库管理</span>
+                <span class="feature-chip">话术管理</span>
+                <span class="feature-chip">客服人员</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 5">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-s-order"></i></span>
+                <h3 class="feature-card__title">订单</h3>
+                <span class="feature-card__count">2 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">订单列表</span>
+                <span class="feature-chip">退款工作台</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 6">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-s-grid"></i></span>
+                <h3 class="feature-card__title">优惠券</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">优惠券列表</span>
+                <span class="feature-chip">创建优惠券</span>
+                <span class="feature-chip">编辑优惠券</span>
+                <span class="feature-chip">领取记录</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 7">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-wallet"></i></span>
+                <h3 class="feature-card__title">财务</h3>
+                <span class="feature-card__count">2 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">资金流水</span>
+                <span class="feature-chip">提现申请</span>
+            </div>
+        </article>
+        </div>
+        <div class="features-empty" data-feature-empty>
+            <span class="features-empty__icon" aria-hidden="true"><i class="el-icon-search"></i></span>
+            <h3>没有找到相关功能</h3>
+            <p>换个关键词试试，或切换其他端查看。</p>
+        </div>
+    </section>
+    <section class="features-panel features-panel--mobile" id="features-panel-mobile" data-feature-panel="mobile" role="tabpanel" aria-labelledby="features-tab-mobile">
+        <div class="features-panel__head">
+            <div>
+                <h2 class="features-panel__title">移动端</h2>
+                <p class="features-panel__desc">H5 · 小程序 · App 三端一致，内容学习、直播互动、下单支付全流程</p>
+            </div>
+            <p class="features-panel__meta"><strong>10</strong> 个模块<span class="features-panel__sep">/</span><strong>51</strong> 项功能</p>
+        </div>
+        <div class="features-cards">
+        <article class="feature-card" style="--card-i: 0">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-menu"></i></span>
+                <h3 class="feature-card__title">底部导航</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">首页（动态装修）</span>
+                <span class="feature-chip">分类</span>
+                <span class="feature-chip">购物车</span>
+                <span class="feature-chip">我的</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 1">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-reading"></i></span>
+                <h3 class="feature-card__title">内容学习</h3>
+                <span class="feature-card__count">8 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">内容列表</span>
+                <span class="feature-chip">内容详情</span>
+                <span class="feature-chip">视频播放</span>
+                <span class="feature-chip">音频播放</span>
+                <span class="feature-chip">小说阅读</span>
+                <span class="feature-chip">专题列表</span>
+                <span class="feature-chip">专题详情</span>
+                <span class="feature-chip">全局搜索</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 2">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-video-camera-solid"></i></span>
+                <h3 class="feature-card__title">直播互动</h3>
+                <span class="feature-card__count">5 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">直播列表</span>
+                <div class="feature-subgroup">
+                    <span class="feature-subgroup__label">直播间</span>
+                    <span class="feature-chip">礼物打赏</span>
+                    <span class="feature-chip">商品挂载</span>
+                    <span class="feature-chip">排行榜</span>
+                    <span class="feature-chip">点赞互动</span>
+                </div>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 3">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-shopping-cart-full"></i></span>
+                <h3 class="feature-card__title">交易支付</h3>
+                <span class="feature-card__count">9 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">确认订单</span>
+                <span class="feature-chip">收银台</span>
+                <span class="feature-chip">支付结果</span>
+                <span class="feature-chip">我的订单</span>
+                <span class="feature-chip">订单详情</span>
+                <span class="feature-chip">订单评价</span>
+                <span class="feature-chip">申请退款</span>
+                <span class="feature-chip">退款列表</span>
+                <span class="feature-chip">退款详情</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 4">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-present"></i></span>
+                <h3 class="feature-card__title">营销活动</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">领券中心</span>
+                <span class="feature-chip">我的优惠券</span>
+                <span class="feature-chip">每日签到</span>
+                <span class="feature-chip">会员中心</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 5">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-share"></i></span>
+                <h3 class="feature-card__title">分销推广</h3>
+                <span class="feature-card__count">3 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">分销推广</span>
+                <span class="feature-chip">佣金管理</span>
+                <span class="feature-chip">佣金提现</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 6">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-wallet"></i></span>
+                <h3 class="feature-card__title">个人资产</h3>
+                <span class="feature-card__count">5 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">资产总览</span>
+                <span class="feature-chip">余额充值</span>
+                <span class="feature-chip">积分资产</span>
+                <span class="feature-chip">添加银行卡</span>
+                <span class="feature-chip">收货地址</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 7">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-user"></i></span>
+                <h3 class="feature-card__title">用户中心</h3>
+                <span class="feature-card__count">8 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">登录注册</span>
+                <span class="feature-chip">个人设置</span>
+                <span class="feature-chip">修改手机号</span>
+                <span class="feature-chip">我的足迹</span>
+                <span class="feature-chip">我的收藏</span>
+                <span class="feature-chip">我的关注</span>
+                <span class="feature-chip">在线客服</span>
+                <span class="feature-chip">关于我们</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 8">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-s-shop"></i></span>
+                <h3 class="feature-card__title">商家模块</h3>
+                <span class="feature-card__count">4 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">商户入驻</span>
+                <span class="feature-chip">商家中心</span>
+                <span class="feature-chip">商家店铺</span>
+                <span class="feature-chip">专题列表</span>
+            </div>
+        </article>
+        <article class="feature-card" style="--card-i: 0">
+            <header class="feature-card__head">
+                <span class="feature-card__icon" aria-hidden="true"><i class="el-icon-magic-stick"></i></span>
+                <h3 class="feature-card__title">DIY装修</h3>
+                <span class="feature-card__count">1 项</span>
+            </header>
+            <div class="feature-card__body">
+                <span class="feature-chip">可视化装修页面</span>
+            </div>
+        </article>
+        </div>
+        <div class="features-empty" data-feature-empty>
+            <span class="features-empty__icon" aria-hidden="true"><i class="el-icon-search"></i></span>
+            <h3>没有找到相关功能</h3>
+            <p>换个关键词试试，或切换其他端查看。</p>
+        </div>
+    </section>
+
+        <p class="features-foot">
+            功能清单随版本持续更新
+            <span aria-hidden="true">/</span>
+            <a href="/plugins">插件市场</a>
+            <span aria-hidden="true">/</span>
+            <a href="/pricing">价格方案</a>
+        </p>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <section class="site-footer-cta" id="contact">
+        <div class="site-container site-footer-cta__inner">
+            <img
+                class="site-footer-cta__title"
+                src="assets/footer/cta-title-cropped.png"
+                alt="开启数字化增长新未来"
+            >
+            <p class="site-footer-cta__desc">选择适合您的版本，让专业的工具助力企业更快、更高效地成长</p>
+            <a class="site-footer-cta__button" href="javascript:void(0)" id="site-footer-consult">
+                <span>立即咨询</span>
+                <i class="el-icon-right" aria-hidden="true"></i>
+            </a>
+
+            <div class="site-footer-cta__features" aria-label="服务保障">
+                                    <article class="site-footer-feature site-footer-feature--security">
+                        <span class="site-footer-feature__icon" aria-hidden="true"></span>
+                        <div>
+                            <h3>安全可靠</h3>
+                            <p>数据安全有保障</p>
+                        </div>
+                    </article>
+                                    <article class="site-footer-feature site-footer-feature--service">
+                        <span class="site-footer-feature__icon" aria-hidden="true"></span>
+                        <div>
+                            <h3>专业服务</h3>
+                            <p>7x12小时技术支持</p>
+                        </div>
+                    </article>
+                                    <article class="site-footer-feature site-footer-feature--growth">
+                        <span class="site-footer-feature__icon" aria-hidden="true"></span>
+                        <div>
+                            <h3>持续优化</h3>
+                            <p>与您共同成长</p>
+                        </div>
+                    </article>
+                            </div>
+        </div>
+    </section>
+
+    <div class="site-footer-main">
+        <div class="site-container">
+            <div class="site-footer-main__grid">
+                <div class="site-footer-brand">
+                    <div class="site-footer-brand__head">
+                        <img src="assets/logo.png" alt="">
+                        <strong>乖乖兔</strong>
+                    </div>
+                    <p>乖乖兔多商户平台系统框架</p>
+                    <div class="site-footer-socials" aria-label="社交媒体">
+                                                    <a
+                                class="site-footer-social site-footer-social--wechat"
+                                href="javascript:void(0)"
+                                aria-label="微信"
+                            >
+                                <span aria-hidden="true"></span>
+                            </a>
+                                                    <a
+                                class="site-footer-social site-footer-social--weibo"
+                                href="javascript:void(0)"
+                                aria-label="微博"
+                            >
+                                <span aria-hidden="true"></span>
+                            </a>
+                                                    <a
+                                class="site-footer-social site-footer-social--linkedin"
+                                href="javascript:void(0)"
+                                aria-label="LinkedIn"
+                            >
+                                <span aria-hidden="true"></span>
+                            </a>
+                                            </div>
+                </div>
+
+                                    <nav class="site-footer-column" aria-label="产品与服务">
+                        <h3>产品与服务</h3>
+                                                    <a href="/pricing">
+                                商业授权版本                            </a>
+                                                    <a href="/pricing">
+                                企业版本                            </a>
+                                                    <a href="/#contact">
+                                定制报价                            </a>
+                                            </nav>
+                                    <nav class="site-footer-column" aria-label="支持与帮助">
+                        <h3>支持与帮助</h3>
+                                                    <a href="/#contact">
+                                帮助中心                            </a>
+                                                    <a href="/#contact">
+                                技术文档                            </a>
+                                                    <a href="/#contact">
+                                联系我们                            </a>
+                                            </nav>
+                                    <nav class="site-footer-column" aria-label="关于我们">
+                        <h3>关于我们</h3>
+                                                    <a href="/about">
+                                公司介绍                            </a>
+                                                    <a href="/about">
+                                新闻动态                            </a>
+                                                    <a href="/about">
+                                加入我们                            </a>
+                                            </nav>
+                
+                <div class="site-footer-contacts" aria-label="联系方式">
+                                            <div class="site-footer-contact site-footer-contact--phone">
+                            <span class="site-footer-contact__icon" aria-hidden="true"></span>
+                            <span>17349395805</span>
+                        </div>
+                                            <div class="site-footer-contact site-footer-contact--email">
+                            <span class="site-footer-contact__icon" aria-hidden="true"></span>
+                            <span>17349395805@163.com</span>
+                        </div>
+                                            <div class="site-footer-contact site-footer-contact--address">
+                            <span class="site-footer-contact__icon" aria-hidden="true"></span>
+                            <span>陕西省西安市未央区太华北路3500号保利中央公园</span>
+                        </div>
+                                    </div>
+            </div>
+
+            <div class="site-footer-copyright">
+                <span>&copy; 2026 乖乖兔. All rights reserved.</span>
+                <i aria-hidden="true"></i>
+                <a href="javascript:void(0)">陕ICP备2026006843号-1</a>
+                <i aria-hidden="true"></i>
+                <a href="javascript:void(0)">隐私政策</a>
+                <i aria-hidden="true"></i>
+                <a href="javascript:void(0)">服务条款</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="site-consult-overlay" id="site-consult-overlay" aria-hidden="true">
+        <div class="site-consult-overlay__mask" data-consult-close></div>
+        <div class="site-consult-box" role="dialog" aria-modal="true" aria-label="联系客服">
+            <button class="site-consult-box__close" type="button" aria-label="关闭" data-consult-close>×</button>
+            <h3>联系客服</h3>
+            <p class="site-consult-box__title">拨打服务热线，获取产品资料与报价方案</p>
+            <div class="site-consult-box__phone">
+                <i class="el-icon-phone-outline" aria-hidden="true"></i>
+                <a href="tel:17349395805">
+                    17349395805                </a>
+                <span>专属客服为您服务</span>
+            </div>
+            <p class="site-consult-box__tip">点击手机号可直接拨打咨询</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+(function () {
+    'use strict';
+
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-feature-tab]'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('[data-feature-panel]'));
+    var jumps = Array.prototype.slice.call(document.querySelectorAll('[data-feature-jump]'));
+    var search = document.querySelector('[data-feature-search]');
+    var clearButton = document.querySelector('[data-feature-clear]');
+    var status = document.querySelector('[data-feature-status]');
+    var toolbar = document.getElementById('features-toolbar');
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function getActivePanel() {
+        return document.querySelector('[data-feature-panel].is-active');
+    }
+
+    function updateStatus(keyword, panel) {
+        if (!status) {
+            return;
+        }
+
+        if (keyword === '') {
+            status.hidden = true;
+            status.textContent = '';
+            return;
+        }
+
+        var visible = Array.prototype.slice
+            .call(panel.querySelectorAll('.feature-chip'))
+            .filter(function (chip) { return !chip.hidden; })
+            .length;
+
+        if (visible === 0) {
+            status.hidden = true;
+            status.textContent = '';
+            return;
+        }
+
+        status.hidden = false;
+        status.innerHTML = '找到 <strong>' + visible + '</strong> 项相关功能';
+    }
+
+    function filter(rawKeyword) {
+        var keyword = String(rawKeyword || '').trim().toLowerCase();
+        var activePanel = getActivePanel();
+
+        panels.forEach(function (panel) {
+            var cards = Array.prototype.slice.call(panel.querySelectorAll('.feature-card'));
+            var empty = panel.querySelector('[data-feature-empty]');
+            var visibleCards = 0;
+
+            cards.forEach(function (card) {
+                var chips = Array.prototype.slice.call(card.querySelectorAll('.feature-chip'));
+                var subgroups = Array.prototype.slice.call(card.querySelectorAll('.feature-subgroup'));
+                var cardVisible = false;
+
+                chips.forEach(function (chip) {
+                    var text = chip.textContent.trim().toLowerCase();
+                    var match = keyword === '' || text.indexOf(keyword) !== -1;
+                    chip.hidden = !match;
+                    cardVisible = cardVisible || match;
+                });
+
+                subgroups.forEach(function (subgroup) {
+                    var label = subgroup.querySelector('.feature-subgroup__label');
+                    var labelMatch = keyword === '' || (label && label.textContent.trim().toLowerCase().indexOf(keyword) !== -1);
+                    var childVisible = false;
+
+                    if (labelMatch) {
+                        Array.prototype.slice.call(subgroup.querySelectorAll('.feature-chip')).forEach(function (chip) {
+                            chip.hidden = false;
+                        });
+                    }
+
+                    childVisible = Array.prototype.slice
+                        .call(subgroup.querySelectorAll('.feature-chip'))
+                        .some(function (chip) { return !chip.hidden; });
+
+                    var show = labelMatch || childVisible;
+                    subgroup.hidden = !show;
+                    cardVisible = cardVisible || show;
+                });
+
+                card.hidden = !cardVisible;
+                if (cardVisible) {
+                    visibleCards++;
+                }
+            });
+
+            if (empty) {
+                empty.classList.toggle('is-visible', keyword !== '' && visibleCards === 0);
+            }
+
+            panel.classList.toggle('is-filtering', keyword !== '');
+        });
+
+        if (clearButton) {
+            clearButton.hidden = keyword === '';
+        }
+
+        if (activePanel) {
+            updateStatus(keyword, activePanel);
+        }
+    }
+
+    function activate(key, updateHash) {
+        var matched = false;
+
+        tabs.forEach(function (tab) {
+            var isActive = tab.getAttribute('data-feature-tab') === key;
+            tab.classList.toggle('is-active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            tab.setAttribute('tabindex', isActive ? '0' : '-1');
+            matched = matched || isActive;
+        });
+
+        if (!matched) {
+            return;
+        }
+
+        panels.forEach(function (panel) {
+            panel.classList.toggle('is-active', panel.getAttribute('data-feature-panel') === key);
+        });
+
+        jumps.forEach(function (row) {
+            row.classList.toggle('is-current', row.getAttribute('data-feature-jump') === key);
+        });
+
+        if (search && search.value.trim() !== '') {
+            filter(search.value);
+        } else if (status) {
+            status.hidden = true;
+        }
+
+        if (updateHash) {
+            try {
+                history.replaceState(null, '', '#' + key);
+            } catch (e) {
+                // 本地文件预览时忽略
+            }
+        }
+    }
+
+    function scrollToToolbar() {
+        if (!toolbar) {
+            return;
+        }
+        toolbar.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    tabs.forEach(function (tab, index) {
+        tab.addEventListener('click', function () {
+            activate(tab.getAttribute('data-feature-tab'), true);
+        });
+
+        tab.addEventListener('keydown', function (event) {
+            var offset = 0;
+            if (event.key === 'ArrowRight') {
+                offset = 1;
+            } else if (event.key === 'ArrowLeft') {
+                offset = -1;
+            } else if (event.key === 'Home') {
+                event.preventDefault();
+                tabs[0].focus();
+                activate(tabs[0].getAttribute('data-feature-tab'), true);
+                return;
+            } else if (event.key === 'End') {
+                event.preventDefault();
+                var last = tabs[tabs.length - 1];
+                last.focus();
+                activate(last.getAttribute('data-feature-tab'), true);
+                return;
+            }
+
+            if (!offset) {
+                return;
+            }
+
+            event.preventDefault();
+            var next = tabs[(index + offset + tabs.length) % tabs.length];
+            next.focus();
+            activate(next.getAttribute('data-feature-tab'), true);
+        });
+    });
+
+    jumps.forEach(function (row) {
+        row.addEventListener('click', function () {
+            activate(row.getAttribute('data-feature-jump'), true);
+            scrollToToolbar();
+        });
+    });
+
+    if (search) {
+        search.addEventListener('input', function () {
+            filter(search.value);
+        });
+
+        search.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && search.value !== '') {
+                search.value = '';
+                filter('');
+                event.stopPropagation();
+            }
+        });
+    }
+
+    if (clearButton) {
+        clearButton.addEventListener('click', function () {
+            if (!search) {
+                return;
+            }
+            search.value = '';
+            filter('');
+            search.focus();
+        });
+    }
+
+    var initial = (location.hash || '').replace('#', '');
+    if (initial) {
+        activate(initial, false);
+    }
+}());
+</script>
+</body>
+</html>
