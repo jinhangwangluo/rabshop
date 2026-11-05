@@ -25,9 +25,6 @@ use think\App;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-require __DIR__ . '/../app/support/ProtectedAutoloader.php';
-\app\support\ProtectedAutoloader::register(dirname(__DIR__));
-
 // 执行HTTP应用并响应
 $http = (new App())->http;
 
